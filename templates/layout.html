@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" href="//chr15m.github.io/minimal-stylesheet/minimal.css">
+        <link href="{{url_for('static', filename='stylesheet.css')}}" rel="stylesheet" type="text/css">
+        <title>{% block title %}Chemically Bonded{% endblock %}</title>
+        {% block headscript %}{% endblock %}
+    </head>
+    <body>
+        <header>
+            <h1 class="centered">Chemically Bonded</h1>
+        </header>
+        {% block content %}{% endblock %}
+    </body>
+</html>
