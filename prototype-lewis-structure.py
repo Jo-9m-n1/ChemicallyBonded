@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
+import svgwrite
 
 # https://networkx.org/documentation/stable/tutorial.html
 G = nx.Graph()
@@ -15,7 +15,7 @@ G.add_edge("O", "H1", order=1)
 G.add_edge("O", "H2", order=1)
 
 # this is a basic bond angle with bond length for matplotlib
-bond_angle = 180
+bond_angle = 109.5
 bond_length = 1.0
 
 positions = {}
@@ -48,10 +48,39 @@ position = {}
 for node in positions:
     position[node] = tuple(positions[node])
 
-# Render
-nx.draw(G, position, with_labels=True, node_size=2000)
-plt.title("H2O Lewis Structure Prototype")
-plt.axis('equal')
-plt.xlim(-1.5, 1.5)
-plt.ylim(-1.5, 1.5)
-plt.show()
+print(positions)
+
+dwg = svgwrite.Drawing("molecule.svg", size=("400px", "400px"))
+
+scale = 150
+offset_x = 200
+offset_y = 200
+
+# Draw bonds
+for u, v in G.edges():
+    x1, y1 = position[u]
+    x2, y2 = position[v]
+
+    dwg.add(dwg.line(
+        start=(x1 * scale + offset_x, -y1 * scale + offset_y),
+        end=(x2 * scale + offset_x, -y2 * scale + offset_y),
+        stroke="black"
+    ))
+
+# Draw atoms
+for node in G.nodes():
+    x, y = position[node]
+
+    dwg.add(dwg.circle(
+        center=(x * scale + offset_x, -y * scale + offset_y),
+        r=20,
+        fill="white",
+        stroke="black"
+    ))
+
+    dwg.add(dwg.text(
+        node,
+        insert=(x * scale + offset_x - 8, -y * scale + offset_y + 5)
+    ))
+
+dwg.save()
