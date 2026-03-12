@@ -1,10 +1,11 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import py3Dmol
+import json
 
 def userMolecule():
     chemName = list(input("Input your molecule (In this format:" \
-    " NaOH or NH3): ").strip())
+    " BeCl2 or H2O): ").strip())
     i = 0
     chemDict = {}
     while len(chemName) > i:
@@ -28,6 +29,33 @@ def userMolecule():
     
     return chemDict
 
+def findCentral(chemDict):
+    """
+    Find the central atom in the lewis structure by finding which
+    one is the least electronegative.
+
+    Args:
+        chemDict (dict): The dictionary that includes the amount
+        of atoms in the molecule
+    
+    Returns:
+        centralAtom
+    """
+    file_path = "static/periodic_table.json"
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except:
+        print(f"Error: The file '{file_path}' was not found.")
+    
+    electroDict = {}
+    for key in chemDict:
+        atomElectro = data[key]["electronegativity"]
+        electroDict[key] = atomElectro
+
+    centralAtom = min(electroDict, key=electroDict.get)
+    
+    return centralAtom
 # Create water molecule from SMILES (need to learn the notation)
 mol = Chem.MolFromSmiles("[N+](=O)([O-])[O-]")
 
@@ -46,8 +74,9 @@ view = py3Dmol.view(width=400, height=400)
 view.addModel(mol_block, "mol")
 view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
 view.zoomTo()
-view.show()
+#view.show()
 with open('templates/html_visualisation.html', 'w') as f:
     view.write_html(f, fullpage=True)
 
-print(userMolecule())
+molecule = userMolecule()
+print(findCentral(molecule))

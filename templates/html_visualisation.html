@@ -1,7 +1,7 @@
 <html>
 <body style="margin: 0; padding: 0; display: block;">
-<div id="3dmolviewer_17725723778312273"  style="position: relative; width: 100%; height: 100vh;">
-        <p id="3dmolwarning_17725723778312273" style="background-color:#ffcccc;color:black">3Dmol.js failed to load for some reason.  Please check your browser console for error messages.<br></p>
+<div id="3dmolviewer_17733477962271802"  style="position: relative; width: 100%; height: 100vh;">
+        <p id="3dmolwarning_17733477962271802" style="background-color:#ffcccc;color:black">3Dmol.js failed to load for some reason.  Please check your browser console for error messages.<br></p>
         </div>
 <script>
 
@@ -32,18 +32,18 @@ $3Dmolpromise = null;
   $3Dmolpromise = loadScriptAsync('https://cdn.jsdelivr.net/npm/3dmol@2.5.4/build/3Dmol-min.js');
 }
 
-var viewer_17725723778312273 = null;
-var warn = document.getElementById("3dmolwarning_17725723778312273");
+var viewer_17733477962271802 = null;
+var warn = document.getElementById("3dmolwarning_17733477962271802");
 if(warn) {
     warn.parentNode.removeChild(warn);
 }
 $3Dmolpromise.then(function() {
-viewer_17725723778312273 = $3Dmol.createViewer(document.getElementById("3dmolviewer_17725723778312273"),{backgroundColor:"white"});
-viewer_17725723778312273.zoomTo();
-	viewer_17725723778312273.addModel("\n     RDKit          3D\n\n  5  4  0  0  0  0  0  0  0  0999 V2000\n    0.0000    0.0000   -0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n   -0.6784    0.8735   -0.0863 H   0  0  0  0  0  0  0  0  0  0  0  0\n   -0.4096   -0.8460   -0.5893 H   0  0  0  0  0  0  0  0  0  0  0  0\n    0.0852   -0.2982    1.0652 H   0  0  0  0  0  0  0  0  0  0  0  0\n    1.0028    0.2707   -0.3896 H   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  1  0\n  1  3  1  0\n  1  4  1  0\n  1  5  1  0\nM  END\n","mol");
-	viewer_17725723778312273.setStyle({"stick": {}, "sphere": {"scale": 0.3}});
-	viewer_17725723778312273.zoomTo();
-viewer_17725723778312273.render();
+viewer_17733477962271802 = $3Dmol.createViewer(document.getElementById("3dmolviewer_17733477962271802"),{backgroundColor:"white"});
+viewer_17733477962271802.zoomTo();
+	viewer_17733477962271802.addModel("\n     RDKit          3D\n\n  4  3  0  0  0  0  0  0  0  0999 V2000\n   -0.0072    0.0255    0.1136 N   0  0  0  0  0  0  0  0  0  0  0  0\n   -0.2900    1.0260    0.8019 O   0  0  0  0  0  0  0  0  0  0  0  0\n   -0.9942   -0.6325   -0.5801 O   0  0  0  0  0  0  0  0  0  0  0  0\n    1.2915   -0.4190    0.0487 O   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  2  0\n  1  3  1  0\n  1  4  1  0\nM  CHG  3   1   1   3  -1   4  -1\nM  END\n","mol");
+	viewer_17733477962271802.setStyle({"stick": {}, "sphere": {"scale": 0.3}});
+	viewer_17733477962271802.zoomTo();
+viewer_17733477962271802.render();
 });
 </script>
 </body>
