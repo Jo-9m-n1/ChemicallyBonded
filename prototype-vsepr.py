@@ -3,6 +3,23 @@ from rdkit.Chem import AllChem
 import py3Dmol
 import json
 
+# (bonding_pairs, lone_pairs): geometry
+VSEPR_TABLE = {
+    (2, 0): "linear",
+    (3, 0): "trigonal planar",
+    (2, 1): "bent",
+    (4, 0): "tetrahedral",
+    (3, 1): "trigonal pyramidal",
+    (2, 2): "bent",
+    (5, 0): "trigonal bipyramidal",
+    (4, 1): "seesaw",
+    (3, 2): "T-shaped",
+    (2, 3): "linear",
+    (6, 0): "octahedral",
+    (5, 1): "square pyramidal",
+    (4, 2): "square planar",
+}
+
 def userMolecule():
     chemName = list(input("Input your molecule (In this format:" \
     " BeCl2 or H2O): ").strip())
@@ -56,11 +73,55 @@ def findCentral(chemDict):
     centralAtom = min(electroDict, key=electroDict.get)
     
     return centralAtom
+
+def findLonePairs(chemDict, centralAtom):
+    file_path = "static/periodic_table.json"
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except:
+        print(f"Error: The file '{file_path}' was not found.")
+
+    totalValence = 0
+
+    for key, value in chemDict.items():
+        atomElectro = data[key]["valence_electrons"]
+        totalValence += (int(atomElectro) * value)
+    """
+    i just realized im doing alex's code
+    """ 
+    return totalValence
+
+def findSMILES(structure3D, centralAtom, chemDict):
+    """
+    given: VSEPR strcture, centralAtom
+    should return: SMILES format
+    """
+    containsHydrogen = False
+    for key in chemDict: # going to change to accomodate for 2 or more surrounding atoms
+        if centralAtom != key:
+            surroundingAtom = key
+
+    for key in chemDict:
+        if key == "H":
+            containsHydrogen = True
+
+    if structure3D == "linear" and not containsHydrogen:
+        smilesForm = f"{surroundingAtom}" + f"[{centralAtom}]" + f"{surroundingAtom}"
+
+    return smilesForm, containsHydrogen
+
+molecule = userMolecule()
+central = findCentral(molecule)
+smiles, containsHydrogen = findSMILES("linear", central, molecule)
+
+print(smiles)
 # Create water molecule from SMILES (need to learn the notation)
-mol = Chem.MolFromSmiles("[N+](=O)([O-])[O-]")
+mol = Chem.MolFromSmiles(smiles)
 
 # Add explicit hydrogens
-mol = Chem.AddHs(mol)
+if containsHydrogen:
+    mol = Chem.AddHs(mol)
     
 # Generate 3D coordinates
 AllChem.EmbedMolecule(mol)
@@ -77,6 +138,3 @@ view.zoomTo()
 #view.show()
 with open('templates/html_visualisation.html', 'w') as f:
     view.write_html(f, fullpage=True)
-
-molecule = userMolecule()
-print(findCentral(molecule))
