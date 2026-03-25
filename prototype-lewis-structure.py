@@ -1,86 +1,133 @@
 import networkx as nx
 import numpy as np
 import svgwrite
+import json
 
-# https://networkx.org/documentation/stable/tutorial.html
-G = nx.Graph()
+with open("periodic_table.json") as file:
+    elements = json.load(file)
 
-# this makes atoms into nodes (later will be connected)
-G.add_node("O", element="O", valence=6, lone_pairs=2)
-G.add_node("H1", element="H", valence=1)
-G.add_node("H2", element="H", valence=1)
+def parse_formula(formula):
+    result = {}
+    i = 0
 
-# make edges to connect nodes
-G.add_edge("O", "H1", order=1)
-G.add_edge("O", "H2", order=1)
+    while i < len(formula):
+        atom = formula[i]
+        i += 1
 
-# this is a basic bond angle with bond length for matplotlib
-bond_angle = 109.5
-bond_length = 1.0
+        if i < len(formula) and formula[i].islower():
+            atom += formula[i]
+            i += 1
+        
+        num = ""
+        while i < len(formula) and formula[i].isdigit():
+            num += formula[i]
+            i += 1
+        
+        count = 0
+        if num:
+            count = int(num)
+        else:
+            count = 1
+        
+        result[atom] = result.get(atom, 0) + count
 
-positions = {}
+    return result
 
-# this makes oxygen the origin. it lets me place it in matplotlib
-positions["O"] = np.array([0.0, 0.0])
+def find_central_atom(chemDict):
+    candidates = {}
+    for atom in chemDict:
+        if atom == "H":
+            continue
+        candidates[atom] = elements[atom]["electronegativity"]
+    
+    central_atom = None
+    min_value = None
 
-# this makes bond angles into radians.
-# https://numpy.org/doc/2.2/reference/generated/numpy.radians.html
-# we are splitting the total angle in 2 so that both hydrogen molecules
-# are symmetric.
-theta = np.radians(bond_angle / 2)
+    for atom, value in candidates.items():
+        if min_value is None or value < min_value:
+            min_value = value
+            central_atom = atom
 
-# these puts the hydrogen atoms in place
-# it is a basic circle that we are then doing the equation r * cos(angle)
-# and r * sin(angle)
-positions["H1"] = np.array([
-    bond_length * np.cos(theta),
-    bond_length * np.sin(theta)
-])
+    return central_atom
 
-positions["H2"] = np.array([
-    bond_length * np.cos(theta),
-    # flip the y coordinate, so H2 can be on the bottom instead
-    -bond_length * np.sin(theta)
-])
+def build_graph(chemDict, central):
+    # https://networkx.org/documentation/stable/tutorial.html
+    G = nx.Graph()
 
-# converts Numpy arrays to tuples so NetworkX can draw them
-position = {}
-for node in positions:
-    position[node] = tuple(positions[node])
+    G.add_node(central, element = central, valence = elements[central]["valence_electrons"])
 
-print(positions)
+    for atom, count in chemDict.items():
+        if atom == central:
+            continue
 
-dwg = svgwrite.Drawing("molecule.svg", size=("400px", "400px"))
+        for i in range(count):
+            name = f"{atom}{i+1}"
 
-scale = 150
-offset_x = 200
-offset_y = 200
+            G.add_node(name, element = atom, valence = elements[atom]["valence_electrons"])
+            G.add_edge(central, name, order = 1)
+    return G
 
-# Draw bonds
-for u, v in G.edges():
-    x1, y1 = position[u]
-    x2, y2 = position[v]
+def generate_positions(G, central, bond_length = 1.0):
+    positions = {}
+    positions[central] = np.array([0.0, 0.0])
 
-    dwg.add(dwg.line(
-        start=(x1 * scale + offset_x, -y1 * scale + offset_y),
-        end=(x2 * scale + offset_x, -y2 * scale + offset_y),
-        stroke="black"
-    ))
+    neighbors = list(G.neighbors(central))
+    n = len(neighbors)
+    if n == 0:
+        return positions
+    angle_step = 2 * np.pi / n
 
-# Draw atoms
-for node in G.nodes():
-    x, y = position[node]
+    for i, atom in enumerate(neighbors):
+        angle = i * angle_step
 
-    dwg.add(dwg.circle(
-        center=(x * scale + offset_x, -y * scale + offset_y),
-        r=20,
-        fill="white",
-        stroke="black"
-    ))
+        positions[atom] = np.array([
+            bond_length * np.cos(angle),
+            bond_length * np.sin(angle)
+        ])
+    
+    return positions
 
-    dwg.add(dwg.text(
-        node,
-        insert=(x * scale + offset_x - 8, -y * scale + offset_y + 5)
-    ))
+def draw_molecule(G, positions):
+    position = {node: tuple(positions[node])for node in positions}
+    dwg = svgwrite.Drawing("molecule.svg", size=("400px", "400px"))
 
-dwg.save()
+    scale = 150
+    offset_x = 200
+    offset_y = 200
+
+    # Draw bonds
+    for u, v in G.edges():
+        x1, y1 = position[u]
+        x2, y2 = position[v]
+
+        dwg.add(dwg.line(
+            start=(x1 * scale + offset_x, -y1 * scale + offset_y),
+            end=(x2 * scale + offset_x, -y2 * scale + offset_y),
+            stroke="black"
+        ))
+
+    # Draw atoms
+    for node in G.nodes():
+        x, y = position[node]
+
+        dwg.add(dwg.circle(
+            center=(x * scale + offset_x, -y * scale + offset_y),
+            r=20,
+            fill="white",
+            stroke="black"
+        ))
+
+        dwg.add(dwg.text(
+            node,
+            insert=(x * scale + offset_x - 8, -y * scale + offset_y + 5)
+        ))
+
+    dwg.save()
+
+formula = "CH4"
+
+parsed = parse_formula(formula)
+central = find_central_atom(parsed)
+G = build_graph(parsed, central)
+positions = generate_positions(G, central)
+draw_molecule(G, positions)
