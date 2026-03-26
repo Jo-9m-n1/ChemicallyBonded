@@ -98,6 +98,7 @@ def findSMILES(structure3D, centralAtom, chemDict):
     should return: SMILES format
     """
     containsHydrogen = False
+
     for key in chemDict: # going to change to accomodate for 2 or more surrounding atoms
         if centralAtom != key:
             surroundingAtom = key
@@ -106,8 +107,14 @@ def findSMILES(structure3D, centralAtom, chemDict):
         if key == "H":
             containsHydrogen = True
 
-    if structure3D == "linear" and not containsHydrogen:
+    if structure3D == "linear":
         smilesForm = f"{surroundingAtom}" + f"[{centralAtom}]" + f"{surroundingAtom}"
+    
+    if not surroundingAtom:
+        smilesForm = centralAtom
+
+    if containsHydrogen:
+        smilesForm = f"[{centralAtom}" + f"{surroundingAtom}" + "2]"
 
     return smilesForm, containsHydrogen
 
@@ -115,7 +122,7 @@ molecule = userMolecule()
 central = findCentral(molecule)
 smiles, containsHydrogen = findSMILES("linear", central, molecule)
 
-print(smiles)
+print(smiles, containsHydrogen)
 # Create water molecule from SMILES (need to learn the notation)
 mol = Chem.MolFromSmiles(smiles)
 
