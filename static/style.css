@@ -1,0 +1,68 @@
+body {
+    background: linear-gradient(135deg, #eff6ff, #e0f2fe, #f0f9ff);
+    min-height: 100vh;
+}
+
+#chat {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 70vh;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.messages {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 25px;
+    line-height: 1.4;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.messages--user {
+    align-self: flex-end;
+    background: rgba(37, 99, 235, 0.75);
+    color: white;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.messages--bot {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.6);
+    color: #111827;
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+#message-input {
+    width: calc(100% - 77px);
+    padding: 10px;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    outline: none;
+}
+
+#sendQuestion {
+    padding: 10px 16px;
+    margin-left: 8px;
+    border-radius: 25px;
+    background: rgba(37, 99, 235, 0.8);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#sendQuestion:hover {
+    background: rgba(30, 64, 175, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
