@@ -1,14 +1,12 @@
 {% extends "layout.html" %}
-{% block title %}
-    Sets for Dummies
-{% endblock %}
 
 {% block content %}
-<main>
-    <div class="homepage">
-        <!-- Homepage div. Mainly used for img CSS. -->
-        <h1>HOMEPAGE</h1>
+<section class="chat" aria-label="Chemistry chat">
+    <div id="chat" class="messages"></div>
+
+    <div class="chat-footer">
+        <input id="message-input" class="chat-input" type="text" placeholder="Type your question here...">
+        <button type="button" id="sendQuestion" class="send">Send</button>
     </div>
-    <hr>
-</main>
+</section>
 {% endblock %}
