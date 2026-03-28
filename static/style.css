@@ -3,7 +3,14 @@ body {
     min-height: 100vh;
 }
 
-#chat {
+.app-layout {
+    display: flex;
+    gap: 20px;
+    max-width: 1100px;
+    align-items: flex-start;
+}
+
+#chat, .history {
     max-width: 800px;
     margin: 20px auto;
     padding: 15px;
@@ -15,6 +22,10 @@ body {
     background: rgba(255, 255, 255, 0.25);
     border-radius: 25px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.chat {
+    flex: 1;
 }
 
 .messages {
@@ -65,4 +76,22 @@ body {
     background: rgba(30, 64, 175, 0.9);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.history {
+    height: 70vh;
+    overflow-y: auto;
+    gap: 0px;
+    width: 300px;
+
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.history-item {
+    border-bottom: 1px solid #111827;
 }

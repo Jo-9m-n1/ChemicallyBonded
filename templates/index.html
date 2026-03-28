@@ -1,12 +1,23 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<section class="chat" aria-label="Chemistry chat">
-    <div id="chat" class="messages"></div>
+<section class="app-layout">
+    <section class="history">
+        <h2>Chat History</h2>
+        <div class="history-list">
+            <!-- Replace real data later -->
+            <div class="history-item">Q1</div>
+            <div class="history-item">Q2</div>
+        </div>
+    </section>
 
-    <div class="chat-footer">
-        <input id="message-input" class="chat-input" type="text" placeholder="Type your question here...">
-        <button type="button" id="sendQuestion" class="send">Send</button>
-    </div>
+    <section class="chat" aria-label="Chemistry chat">
+        <div id="chat" class="messages"></div>
+
+        <div class="chat-footer">
+            <input id="message-input" class="chat-input" type="text" placeholder="Type your question here...">
+            <button type="button" id="sendQuestion" class="send">Send</button>
+        </div>
+    </section>
 </section>
 {% endblock %}
