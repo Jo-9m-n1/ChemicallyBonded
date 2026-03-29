@@ -10,7 +10,18 @@ body {
     align-items: flex-start;
 }
 
-#chat, .history {
+.history::-webkit-scrollbar,
+#chat::-webkit-scrollbar {
+    display: none;
+}
+
+.history,
+#chat {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+#chat, #left-box {
     max-width: 800px;
     margin: 20px auto;
     padding: 15px;
@@ -56,8 +67,8 @@ body {
     width: calc(100% - 77px);
     padding: 10px;
     border-radius: 25px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 0px solid rgba(255, 255, 255, 0.3);
+    background: transparent;
     outline: none;
 }
 
@@ -78,7 +89,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.history {
+#left-box {
     height: 70vh;
     overflow-y: auto;
     gap: 0px;
@@ -94,4 +105,38 @@ body {
 
 .history-item {
     border-bottom: 1px solid #111827;
+}
+
+.tab, .chat-footer {
+    width: 100%;
+    padding: 10px;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    outline: none;
+    margin-top: auto; 
+    flex-shrink: 0;
+}
+
+.tab {
+    display: flex;
+    width: 100%;
+    margin-top: auto;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 25px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.home, .profile {
+    flex: 1;
+    padding: 6px;
+    text-align: center;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.home:hover, .profile:hover {
+    transform: translateY(-1px);
+    cursor: pointer;
 }
