@@ -40,11 +40,9 @@ async function startNewChat() {
         const data = await res.json();
 
         if (data.id) {
-            document.getElementById('chat').innerHTML = '';
+            document.getElementById('chat').innerHTML = '<div class="messages--bot messages">Hi! Welcome to my office, how can I help you today?</div>';
             document.getElementById('message-input').value = '';
             loadHistory(); 
-            //REMOVE IT LATERRRRRRRR, DO NOT FORGETTTTTTT
-            console.log("New Chat ID:", data.id);
         }
     } catch (e) { console.error(e); }
 }

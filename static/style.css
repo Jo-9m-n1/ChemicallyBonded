@@ -15,32 +15,62 @@ body {
     display: none;
 }
 
-.history,
-#chat {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-#chat, #left-box {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    height: 70vh;
-    overflow-y: auto;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 25px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+.chat h3 {
+    margin: 0px;
+    color: black;
+    text-align: center;
 }
 
 .chat {
     flex: 1;
 }
 
+.left-box, .chat {
+    display: flex;
+    flex-direction: column;
+    height: 70vh;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 20px;
+    border: none; 
+    box-shadow: 
+        inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+#history-list, #chat.messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+#history-list::-webkit-scrollbar, 
+#chat.messages::-webkit-scrollbar {
+    display: none;
+}
+
+.chat h3, #left-box h2 {
+    margin: 0 0 15px 0;
+    flex-shrink: 0;
+}
+
+#chat {
+    border: 0px;
+}
+
+.chat-footer, .tab {
+    flex-shrink: 0;
+    margin-top: auto; 
+}
+
 .messages {
-    max-width: 70%;
     padding: 12px 16px;
     border-radius: 25px;
     line-height: 1.4;
@@ -48,6 +78,7 @@ body {
 }
 
 .messages--user {
+    max-width: 75%;
     align-self: flex-end;
     background: rgba(37, 99, 235, 0.75);
     color: white;
@@ -56,6 +87,7 @@ body {
 }
 
 .messages--bot {
+    max-width: 75%;
     align-self: flex-start;
     background: rgba(255, 255, 255, 0.6);
     color: #111827;
@@ -96,7 +128,7 @@ body {
     width: 300px;
 }
 
-#left-box h2 {
+.left-box h2 {
     margin-top: 0px;
 }
 
@@ -119,12 +151,13 @@ body {
     outline: none;
     margin-top: auto; 
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .tab {
     display: flex;
     width: 100%;
-    margin-top: auto;
+    margin-top: 10px;
     background: rgba(255, 255, 255, 0.4);
     border-radius: 25px;
     overflow: hidden;
