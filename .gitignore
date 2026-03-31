@@ -3,3 +3,4 @@ __pycache__
 .vm
 .venv
 .vscode
+chats.db

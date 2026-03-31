@@ -4,20 +4,25 @@ const btn = document.getElementById('sendQuestion');
 
 async function sendMessage() {
     const message = input.value.trim();
+
     if (!message) return;
+
     const userMsg = document.createElement('div');
     userMsg.className = 'messages messages--user';
     userMsg.textContent = message;
     chat.appendChild(userMsg);
     chat.scrollTop = chat.scrollHeight;
     input.value = '';
+
     const res = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message })
     });
+
     const data = await res.json();
     const botMsg = document.createElement('div');
+
     botMsg.className = 'messages messages--bot';
     botMsg.textContent = data.reply;
     chat.appendChild(botMsg);
@@ -28,3 +33,34 @@ btn.addEventListener('click', sendMessage);
 input.addEventListener('keypress', e => {
     if (e.key === 'Enter') sendMessage();
 });
+
+async function startNewChat() {
+    try {
+        const res = await fetch('/newchat', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.id) {
+            document.getElementById('chat').innerHTML = '';
+            document.getElementById('message-input').value = '';
+            loadHistory(); 
+            //REMOVE IT LATERRRRRRRR, DO NOT FORGETTTTTTT
+            console.log("New Chat ID:", data.id);
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function loadHistory() {
+    const res = await fetch('/get_conversations');
+    const conversations = await res.json();
+    const historyList = document.getElementById('history-list');
+
+    historyList.innerHTML = conversations.map(chat => `
+        <div class="history-item">
+            <strong>${chat.title}</strong>
+            <br><small>${chat.date}</small>
+        </div>
+    `).join('');
+}
+
+startNewChat()
+window.onload = loadHistory;

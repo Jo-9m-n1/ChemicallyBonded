@@ -1,5 +1,5 @@
 body {
-    background: linear-gradient(135deg, #eff6ff, #e0f2fe, #f0f9ff);
+    background: linear-gradient(135deg, #b8b8ff, #f8f7ff, #ffd8be);
     min-height: 100vh;
 }
 
@@ -10,7 +10,7 @@ body {
     align-items: flex-start;
 }
 
-.history::-webkit-scrollbar,
+#left-box::-webkit-scrollbar,
 #chat::-webkit-scrollbar {
     display: none;
 }
@@ -67,7 +67,7 @@ body {
     width: calc(100% - 77px);
     padding: 10px;
     border-radius: 25px;
-    border: 0px solid rgba(255, 255, 255, 0.3);
+    border: 0px solid rgba(255, 255, 255, 0.25);
     background: transparent;
     outline: none;
 }
@@ -78,13 +78,13 @@ body {
     border-radius: 25px;
     background: rgba(37, 99, 235, 0.8);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 #sendQuestion:hover {
-    background: rgba(30, 64, 175, 0.9);
+    background: rgba(37, 99, 235, 0.9);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -94,7 +94,10 @@ body {
     overflow-y: auto;
     gap: 0px;
     width: 300px;
+}
 
+#left-box h2 {
+    margin-top: 0px;
 }
 
 .history-list {
@@ -104,7 +107,7 @@ body {
 }
 
 .history-item {
-    border-bottom: 1px solid #111827;
+    padding:10px;
 }
 
 .tab, .chat-footer {
@@ -139,4 +142,15 @@ body {
 .home:hover, .profile:hover {
     transform: translateY(-1px);
     cursor: pointer;
+}
+
+.new-chat-btn {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 25px;
+    border: 0px solid;
+    background-color: rgba(82, 171, 255, 0.1);
+    outline: none;
+    cursor: pointer;
+    font-weight: 600;
 }
