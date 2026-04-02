@@ -36,3 +36,25 @@
 ```bash
 git clone https://github.com/yourusername/chemically-bonded.git
 cd chemically-bonded
+```
+
+### 2. Install Dependencies
+Ensure you have Python installed, then run:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Set Up API Key
+Create a .env file or export your Gemini API key:
+
+```bash
+export GEMINI_API_KEY='your_api_key_here'
+```
+### 4. Run the Application
+Start the Flask server:
+
+```Bash
+python app.py
+```
+Then, open your browser and navigate to http://127.0.0.1:5000.
