@@ -92,35 +92,51 @@ def findLonePairs(chemDict, centralAtom):
     """ 
     return totalValence
 
-def findSMILES(structure3D, centralAtom, chemDict):
-    """
-    given: VSEPR strcture, centralAtom
-    should return: SMILES format
-    """
-    containsHydrogen = False
+# TODO: need to be able to computer this from a function
+#       this is a temp dictionary for now
+bonds = [
+    {"to": "F", "bond_order": 1},
+    {"to": "F", "bond_order": 1},
+    {"to": "F", "bond_order": 1}
+]
 
-    for key in chemDict: # going to change to accomodate for 2 or more surrounding atoms
-        if centralAtom != key:
-            surroundingAtom = key
+def findSMILES(structure3D, centralAtom, chemDict, bond_order):
+    """
+    given: VSEPR strcture, centralAtom, chemDict, bond_order
+    should return: SMILES format
+    TODO: going to change to accommodate for 2 or more surrounding atoms
+    """
+
+    containsHydrogen = False
+    bond_symbol = {
+        1: "",
+        2: "=",
+        3: "#"
+    }
 
     for key in chemDict:
         if key == "H":
             containsHydrogen = True
+    print(structure3D, centralAtom, chemDict, bond_order)
 
-    if structure3D == "linear":
-        smilesForm = f"{surroundingAtom}" + f"[{centralAtom}]" + f"{surroundingAtom}"
-    
-    if not surroundingAtom:
-        smilesForm = centralAtom
+    if structure3D == "linear2":
+        for bond in bonds:
+            if bond["to"] == "H":
+                bond["to"] = "[H]"
 
-    if containsHydrogen:
-        smilesForm = f"[{centralAtom}" + f"{surroundingAtom}" + "2]"
+        leftForm = bond_order[0]["to"] + bond_symbol[bond_order[0]["bond_order"]]
+        rightForm = bond_symbol[bond_order[1]["bond_order"]] + bond_order[1]["to"]
+        
+        smilesForm = f"{leftForm}[{centralAtom}]{rightForm}"
+    elif structure3D == "trigonal_planar":
+        smilesForm = f"{centralAtom}({bond_order[0]["to"]})({bond_order[1]["to"]}){bond_order[2]["to"]}"
+
 
     return smilesForm, containsHydrogen
 
 molecule = userMolecule()
 central = findCentral(molecule)
-smiles, containsHydrogen = findSMILES("linear", central, molecule)
+smiles, containsHydrogen = findSMILES("trigonal_planar", central, molecule, bonds)
 
 print(smiles, containsHydrogen)
 # Create water molecule from SMILES (need to learn the notation)
