@@ -133,9 +133,23 @@ def draw_molecule(G, positions):
 
     dwg.save()
 
-formula = "CH4"
+formula = input("Enter a chemical formula: ")
 
 parsed = parse_formula(formula)
+
+print("Valence electrons per atom:")
+
+for atom, count in parsed.items():
+    valence = get_valence_electrons(atom)
+    print(f"{atom}: {valence} × {count} = {valence * count}")
+
+total_valence = sum(
+    get_valence_electrons(atom) * count
+    for atom, count in parsed.items()
+)
+
+print("Total valence electrons:", total_valence)
+
 central = find_central_atom(parsed)
 G = build_graph(parsed, central)
 positions = generate_positions(G, central)
