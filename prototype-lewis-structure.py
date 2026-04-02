@@ -33,6 +33,9 @@ def parse_formula(formula):
 
     return result
 
+def get_valence_electrons(atom):
+    return elements[atom]["valence_electrons"]
+
 def find_central_atom(chemDict):
     candidates = {}
     for atom in chemDict:
@@ -54,7 +57,7 @@ def build_graph(chemDict, central):
     # https://networkx.org/documentation/stable/tutorial.html
     G = nx.Graph()
 
-    G.add_node(central, element = central, valence = elements[central]["valence_electrons"])
+    G.add_node(central, element = central, valence = get_valence_electrons(central), lone_electrons = get_valence_electrons(central), bonds = 0)
 
     for atom, count in chemDict.items():
         if atom == central:
@@ -63,8 +66,14 @@ def build_graph(chemDict, central):
         for i in range(count):
             name = f"{atom}{i+1}"
 
-            G.add_node(name, element = atom, valence = elements[atom]["valence_electrons"])
+            G.add_node(name, element = atom, valence = get_valence_electrons(atom), lone_electrons = get_valence_electrons(atom), bonds = 0)
             G.add_edge(central, name, order = 1)
+
+            G.nodes[central]["lone_electrons"] -= 1
+            G.nodes[name]["lone_electrons"] -= 1
+
+            G.nodes[central]["bonds"] += 1
+            G.nodes[name]["bonds"] += 1
     return G
 
 def generate_positions(G, central, bond_length = 1.0):
