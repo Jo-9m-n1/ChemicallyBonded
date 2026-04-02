@@ -24,7 +24,7 @@
 
 ## Tech Stack
 
-- **Frontend**: HTML, CSS  
+- **Frontend**: HTML, CSS & JavaScript
 - **Backend**: Python (Flask)  
 - **AI Logic**: Gemini API  
 
