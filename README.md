@@ -7,9 +7,9 @@
 
 ---
 ## Creators
-- Jongmin Lee
-- Alexander Derderian
-- James Ferdinand Combista
+- [Jongmin Lee](https://www.linkedin.com/in/jo-9m-n1/)
+- [Alexander Derderian](https://www.linkedin.com/in/alexander-derderian-43b21836b/)
+- [James Ferdinand Combista](https://www.linkedin.com/in/james-ferdinand-combista-88039b316/)
 
 ---
 
