@@ -1,5 +1,11 @@
+:root {
+    --bg-color-1: #b8b8ff;
+    --bg-color-2: #f8f7ff;
+    --bg-color-3: #ffd8be;
+}
+
 body {
-    background: linear-gradient(135deg, #b8b8ff, #f8f7ff, #ffd8be);
+    background: linear-gradient(135deg, var(--bg-color-1), var(--bg-color-2), var(--bg-color-3));
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -188,4 +194,40 @@ body {
     outline: none;
     cursor: pointer;
     font-weight: 600;
+}
+
+.theme-settings {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.theme-settings h3 {
+    font-size: 0.9rem;
+    margin: 0 0 10px 0;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.color-picker-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.picker-item span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #666;
 }

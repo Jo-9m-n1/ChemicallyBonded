@@ -1,6 +1,9 @@
 const chat = document.getElementById('chat');
 const input = document.getElementById('message-input');
 const btn = document.getElementById('sendQuestion');
+const color1 = document.getElementById('color1');
+const color2 = document.getElementById('color2');
+const color3 = document.getElementById('color3');
 
 async function sendMessage() {
     const message = input.value.trim();
@@ -59,6 +62,16 @@ async function loadHistory() {
         </div>
     `).join('');
 }
+
+function updateBackground() {
+    document.documentElement.style.setProperty('--bg-color-1', color1.value);
+    document.documentElement.style.setProperty('--bg-color-2', color2.value);
+    document.documentElement.style.setProperty('--bg-color-3', color3.value);
+}
+
+color1.addEventListener('input', updateBackground);
+color2.addEventListener('input', updateBackground);
+color3.addEventListener('input', updateBackground);
 
 startNewChat()
 window.onload = loadHistory;
