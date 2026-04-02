@@ -1,0 +1,7 @@
+flask==3.0.3
+google-genai==0.4.0
+flask-sqlalchemy==3.1.1
+python-dotenv==1.0.1
+rdkit==2025.9.4
+py3Dmol==2.5.4
+matplotlib==3.10.8
