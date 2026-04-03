@@ -5,7 +5,7 @@ import json
 
 # (bonding_pairs, lone_pairs): geometry
 VSEPR_TABLE = {
-    (2, 0): "linear",
+    (2, 0): "linear2",
     (3, 0): "trigonal planar",
     (2, 1): "bent",
     (4, 0): "tetrahedral",
@@ -14,10 +14,12 @@ VSEPR_TABLE = {
     (5, 0): "trigonal bipyramidal",
     (4, 1): "seesaw",
     (3, 2): "T-shaped",
-    (2, 3): "linear",
+    (2, 3): "linear5",
     (6, 0): "octahedral",
     (5, 1): "square pyramidal",
     (4, 2): "square planar",
+    (3, 3): "T-shaped",
+    (2, 4): "linear6"
 }
 
 def userMolecule():
@@ -74,30 +76,11 @@ def findCentral(chemDict):
     
     return centralAtom
 
-def findLonePairs(chemDict, centralAtom):
-    file_path = "static/periodic_table.json"
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except:
-        print(f"Error: The file '{file_path}' was not found.")
-
-    totalValence = 0
-
-    for key, value in chemDict.items():
-        atomElectro = data[key]["valence_electrons"]
-        totalValence += (int(atomElectro) * value)
-    """
-    i just realized im doing alex's code
-    """ 
-    return totalValence
-
-# TODO: need to be able to computer this from a function
+# TODO: need to be able to compute this from a function
 #       this is a temp dictionary for now
 bonds = [
-    {"to": "F", "bond_order": 1},
-    {"to": "F", "bond_order": 1},
-    {"to": "F", "bond_order": 1}
+    {"to": "S", "bond_order": 2},
+    {"to": "S", "bond_order": 2}
 ]
 
 def findSMILES(structure3D, centralAtom, chemDict, bond_order):
@@ -128,17 +111,18 @@ def findSMILES(structure3D, centralAtom, chemDict, bond_order):
         rightForm = bond_symbol[bond_order[1]["bond_order"]] + bond_order[1]["to"]
         
         smilesForm = f"{leftForm}[{centralAtom}]{rightForm}"
-    elif structure3D == "trigonal_planar":
-        smilesForm = f"{centralAtom}({bond_order[0]["to"]})({bond_order[1]["to"]}){bond_order[2]["to"]}"
+    elif structure3D == "trigonal planar":
+        smilesForm = f"{centralAtom}({bond_order[0]['to']})({bond_order[1]['to']}){bond_order[2]['to']}"
 
 
     return smilesForm, containsHydrogen
 
 molecule = userMolecule()
 central = findCentral(molecule)
-smiles, containsHydrogen = findSMILES("trigonal_planar", central, molecule, bonds)
+#bonds, centralLonePairs, structure3D =  buildBondListAndVSEPR(molecule, central)
+smiles, containsHydrogen = findSMILES("linear2", central, molecule, bonds)
 
-print(smiles, containsHydrogen)
+# print(smiles, containsHydrogen)
 # Create water molecule from SMILES (need to learn the notation)
 mol = Chem.MolFromSmiles(smiles)
 
