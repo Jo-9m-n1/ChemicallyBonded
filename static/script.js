@@ -63,6 +63,27 @@ async function loadHistory() {
     `).join('');
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const homeView = document.getElementById('home-view');
+    const profileView = document.getElementById('profile-view');
+    const homeBtn = document.querySelector('.home'); 
+    const profileBtn = document.querySelector('.profile');
+
+    if (profileBtn) {
+        profileBtn.addEventListener('click', () => {
+            homeView.style.display = 'none';
+            profileView.style.display = 'flex';
+        });
+    }
+    
+    if (homeBtn) {
+        homeBtn.addEventListener('click', () => {
+            profileView.style.display = 'none';
+            homeView.style.display = 'flex';
+        });
+    }
+});
+
 function updateBackground() {
     document.documentElement.style.setProperty('--bg-color-1', color1.value);
     document.documentElement.style.setProperty('--bg-color-2', color2.value);
