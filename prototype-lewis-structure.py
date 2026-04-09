@@ -53,6 +53,17 @@ def find_central_atom(chemDict):
 
     return central_atom
 
+def assign_lone_pairs(G):
+    for node in G.nodes():
+        element = G.nodes[node]["element"]
+
+        if element == "H":
+            G.nodes[node]["lone_pairs"] = 0
+            continue
+
+        electrons = G.nodes[node]["lone_electrons"]
+        G.nodes[node]["lone_pairs"] = electrons // 2
+
 def build_graph(chemDict, central):
     # https://networkx.org/documentation/stable/tutorial.html
     G = nx.Graph()
@@ -76,10 +87,26 @@ def build_graph(chemDict, central):
             G.nodes[name]["bonds"] += 1
     return G
 
+def get_max_bonds(element):
+    if element == "H":
+        return 1
+    elif element in ["F", "Cl", "Br", "I"]:
+        return 1
+    elif element == "O":
+        return 2
+    elif element == "N":
+        return 3
+    elif element == "C":
+        return 4
+    else:
+        return 1
+
 def upgrade_bonds(G, central):
     neighbors = list(G.neighbors(central))
 
-    while G.nodes[central]["bonds"] < 4:
+    limit = get_max_bonds(G.nodes[central]["element"])
+
+    while G.nodes[central]["bonds"] < limit:
         updated = False
 
         for neighbor in neighbors:
@@ -116,6 +143,9 @@ def generate_positions(G, central, bond_length = 1.0):
         ])
     
     return positions
+
+def angle_diff(a, b):
+    return abs((a - b + np.pi) % (2 * np.pi) - np.pi)
 
 def draw_molecule(G, positions):
     position = {node: tuple(positions[node])for node in positions}
@@ -162,12 +192,50 @@ def draw_molecule(G, positions):
     for node in G.nodes():
         x, y = position[node]
 
+        neighbors = list(G.neighbors(node))
+
+        bond_angles = []
+        for neighbor in neighbors:
+            nx, ny = position[neighbor]
+            angle = np.arctan2(ny - y, nx - x)
+            bond_angles.append(angle)
+        
+        all_angles = [i * (np.pi / 2) for i in range(4)]  # 0°, 90°, 180°, 270°
+
+        free_angles = []
+
+        for a in all_angles:
+            if all(angle_diff(a, b) > 0.5 for b in bond_angles):
+                free_angles.append(a)
+
         dwg.add(dwg.circle(
             center=(x * scale + offset_x, -y * scale + offset_y),
             r=20,
             fill="white",
             stroke="black"
         ))
+
+        lone_pairs = G.nodes[node].get("lone_pairs", 0)
+        for i in range(min(lone_pairs, len(free_angles))):
+            angle = free_angles[i]
+
+            dx = 30 * np.cos(angle)
+            dy = 30 * np.sin(angle)
+
+            # draw 2 dots per pair
+            dwg.add(dwg.circle(
+                center=(x * scale + offset_x + dx - 3,
+                        -y * scale + offset_y + dy),
+                r=2,
+                fill="black"
+            ))
+
+            dwg.add(dwg.circle(
+                center=(x * scale + offset_x + dx + 3,
+                        -y * scale + offset_y + dy),
+                r=2,
+                fill="black"
+            ))
 
         dwg.add(dwg.text(
             G.nodes[node]["element"],
@@ -196,5 +264,6 @@ print("Total valence electrons:", total_valence)
 central = find_central_atom(parsed)
 G = build_graph(parsed, central)
 upgrade_bonds(G, central)
+assign_lone_pairs(G)
 positions = generate_positions(G, central)
 draw_molecule(G, positions)
