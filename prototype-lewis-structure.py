@@ -76,6 +76,27 @@ def build_graph(chemDict, central):
             G.nodes[name]["bonds"] += 1
     return G
 
+def upgrade_bonds(G, central):
+    neighbors = list(G.neighbors(central))
+
+    while G.nodes[central]["bonds"] < 4:
+        updated = False
+
+        for neighbor in neighbors:
+            if G.nodes[neighbor]["bonds"] < 4 and G.nodes[central]["lone_electrons"] > 0 and G[central][neighbor]["order"] < 3:
+                G[central][neighbor]["order"] += 1
+
+                G.nodes[central]["lone_electrons"] -= 1
+                G.nodes[neighbor]["lone_electrons"] -= 1
+
+                G.nodes[central]["bonds"] += 1
+                G.nodes[neighbor]["bonds"] += 1
+
+                updated = True
+
+        if not updated:
+            break
+
 def generate_positions(G, central, bond_length = 1.0):
     positions = {}
     positions[central] = np.array([0.0, 0.0])
@@ -105,15 +126,37 @@ def draw_molecule(G, positions):
     offset_y = 200
 
     # Draw bonds
-    for u, v in G.edges():
+    for u, v, data in G.edges(data = True):
+        order = data.get("order", 1)
+
         x1, y1 = position[u]
         x2, y2 = position[v]
 
-        dwg.add(dwg.line(
-            start=(x1 * scale + offset_x, -y1 * scale + offset_y),
-            end=(x2 * scale + offset_x, -y2 * scale + offset_y),
-            stroke="black"
-        ))
+        # direction vector
+        dx = x2 - x1
+        dy = y2 - y1
+        length = np.sqrt(dx**2 + dy**2)
+
+        # perpendicular vector
+        px = -dy / length
+        py = dx / length
+
+        for i in range(order):
+            offset = (i - (order - 1) / 2) * 10
+
+            dwg.add(dwg.line(
+                start=(
+                    x1 * scale + offset_x + px * offset,
+                    -y1 * scale + offset_y + py * offset
+                ),
+                end=(
+                    x2 * scale + offset_x + px * offset,
+                    -y2 * scale + offset_y + py * offset
+                ),
+                stroke="black"
+            ))
+
+        print(u, "-", v, "order:", data["order"])
 
     # Draw atoms
     for node in G.nodes():
@@ -127,7 +170,7 @@ def draw_molecule(G, positions):
         ))
 
         dwg.add(dwg.text(
-            node,
+            G.nodes[node]["element"],
             insert=(x * scale + offset_x - 8, -y * scale + offset_y + 5)
         ))
 
@@ -152,5 +195,6 @@ print("Total valence electrons:", total_valence)
 
 central = find_central_atom(parsed)
 G = build_graph(parsed, central)
+upgrade_bonds(G, central)
 positions = generate_positions(G, central)
 draw_molecule(G, positions)
