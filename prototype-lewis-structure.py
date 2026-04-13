@@ -7,6 +7,16 @@ with open("periodic_table.json") as file:
     elements = json.load(file)
 
 def parse_formula(formula):
+    """
+    Parse a chemical formula string into a dictionary containing
+    each atom and its quantity in the molecule.
+
+    Args:
+        formula (str): The chemical formula (e.g., "H2O", "CO2")
+
+    Returns:
+        dict: A dictionary mapping each atom to its count
+    """
     result = {}
     i = 0
 
@@ -34,9 +44,29 @@ def parse_formula(formula):
     return result
 
 def get_valence_electrons(atom):
+    """
+    Retrieve the number of valence electrons for a given atom
+    from the periodic table data.
+
+    Args:
+        atom (str): The chemical symbol of the atom
+
+    Returns:
+        int: Number of valence electrons for the atom
+    """
     return elements[atom]["valence_electrons"]
 
 def find_central_atom(chemDict):
+    """
+    Find the central atom in the Lewis structure by selecting
+    the atom with the lowest electronegativity (excluding hydrogen).
+
+    Args:
+        chemDict (dict): Dictionary containing atoms and their counts
+
+    Returns:
+        str: The central atom of the molecule
+    """
     candidates = {}
     for atom in chemDict:
         if atom == "H":
@@ -54,6 +84,16 @@ def find_central_atom(chemDict):
     return central_atom
 
 def assign_lone_pairs(G):
+    """
+    Calculate and assign the number of lone pairs for each atom
+    based on remaining non-bonding electrons.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+
+    Returns:
+        None
+    """
     for node in G.nodes():
         element = G.nodes[node]["element"]
 
@@ -65,7 +105,17 @@ def assign_lone_pairs(G):
         G.nodes[node]["lone_pairs"] = electrons // 2
 
 def build_graph(chemDict, central):
-    # https://networkx.org/documentation/stable/tutorial.html
+    """
+    Construct a graph representation of the molecule where atoms
+    are nodes and bonds are edges, initially with single bonds.
+
+    Args:
+        chemDict (dict): Dictionary of atoms and their counts
+        central (str): The central atom of the molecule
+
+    Returns:
+        networkx.Graph: Graph representing the molecule structure
+    """
     G = nx.Graph()
 
     G.add_node(central, element = central, valence = get_valence_electrons(central), lone_electrons = get_valence_electrons(central), bonds = 0)
@@ -88,6 +138,16 @@ def build_graph(chemDict, central):
     return G
 
 def get_max_bonds(element):
+    """
+    Determine the maximum number of bonds an atom can form
+    based on simple valence rules.
+
+    Args:
+        element (str): The chemical symbol of the atom
+
+    Returns:
+        int: Maximum number of bonds allowed for the atom
+    """
     if element == "H":
         return 1
     elif element in ["F", "Cl", "Br", "I"]:
@@ -102,6 +162,17 @@ def get_max_bonds(element):
         return 1
 
 def upgrade_bonds(G, central):
+    """
+    Upgrade single bonds to double or triple bonds in order to
+    satisfy bonding requirements of the central atom.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+        central (str): The central atom of the molecule
+
+    Returns:
+        None
+    """
     neighbors = list(G.neighbors(central))
 
     limit = get_max_bonds(G.nodes[central]["element"])
@@ -125,6 +196,18 @@ def upgrade_bonds(G, central):
             break
 
 def generate_positions(G, central, bond_length = 1.0):
+    """
+    Generate 2D positions for each atom by placing surrounding atoms
+    evenly around the central atom in a circular layout.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+        central (str): The central atom
+        bond_length (float): Distance from central atom to neighbors
+
+    Returns:
+        dict: Dictionary mapping each node to its 2D position
+    """
     positions = {}
     positions[central] = np.array([0.0, 0.0])
 
@@ -145,9 +228,31 @@ def generate_positions(G, central, bond_length = 1.0):
     return positions
 
 def angle_diff(a, b):
+    """
+    Compute the smallest difference between two angles, taking into
+    account circular wrapping.
+
+    Args:
+        a (float): First angle in radians
+        b (float): Second angle in radians
+
+    Returns:
+        float: Absolute angular difference
+    """
     return abs((a - b + np.pi) % (2 * np.pi) - np.pi)
 
 def draw_molecule(G, positions):
+    """
+    Render the molecule as an SVG image, including atoms, bonds,
+    and lone pairs positioned around each atom.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+        positions (dict): Dictionary of node positions
+
+    Returns:
+        None
+    """
     position = {node: tuple(positions[node])for node in positions}
     dwg = svgwrite.Drawing("molecule.svg", size=("400px", "400px"))
 
