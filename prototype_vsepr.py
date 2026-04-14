@@ -158,6 +158,7 @@ def findSMILES(structure3D, centralAtom, chemDict, bond_order):
         
         smilesForm = f"{leftForm}[{centralAtom}]{rightForm}"
     elif structure3D == "trigonal planar":
+            
         smilesForm = f"{centralAtom}({bond_order[0]['to']})({bond_order[1]['to']}){bond_order[2]['to']}"
 
 

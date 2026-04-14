@@ -3,7 +3,7 @@ import numpy as np
 import svgwrite
 import json
 
-with open("periodic_table.json") as file:
+with open("static/periodic_table.json") as file:
     elements = json.load(file)
 
 def parse_formula(formula):

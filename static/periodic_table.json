@@ -42,7 +42,9 @@
 
     "Cs":{"electronegativity":0.79, "valence_electrons":1, "max_bonds":1},
     "Ba":{"electronegativity":0.89, "valence_electrons":2, "max_bonds":2},
-
+    
+    "Hg":{"electronegativity":2.00, "valence_electrons":2, "max_bonds":2},
+    
     "Tl":{"electronegativity":1.62, "valence_electrons":3, "max_bonds":3},
     "Pb":{"electronegativity":2.33, "valence_electrons":4, "max_bonds":4},
     "Bi":{"electronegativity":2.02, "valence_electrons":5, "max_bonds":5},
