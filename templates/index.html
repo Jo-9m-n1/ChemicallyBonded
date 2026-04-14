@@ -1,12 +1,50 @@
 {% extends "layout.html" %}
-{% block title %}Chemically Bonded{% endblock %}
 
 {% block content %}
-<main>
-    <div class="homepage">
-        <!-- Homepage div. Mainly used for img CSS. -->
-        <h1>HOMEPAGE</h1>
-    </div>
-    <hr>
-</main>
+<section class="app-layout">
+    <section class="left-box">
+        <div id="home-view">
+            <h2>Chat History</h2>
+            <button onclick="startNewChat()" class="new-chat-btn" id="ui-new-chat">
+                <i class="fa-solid fa-plus"></i> New Question
+            </button>
+            <div id="left-box">
+                <div class="history-list" id="history-list"></div>
+            </div>
+        </div>
+        <div id="profile-view" style="display: none;">
+            <h2>Profile</h2>
+            <div class="theme-settings">
+                <h3>Theme Customization</h3>
+                <div class="color-picker-group">
+                    <div class="picker-item">
+                        <input type="color" id="color1" value="#b8b8ff">
+                        <span>Primary</span>
+                    </div>
+                    <div class="picker-item">
+                        <input type="color" id="color2" value="#f8f7ff">
+                        <span>Accent</span>
+                    </div>
+                    <div class="picker-item">
+                        <input type="color" id="color3" value="#ffd8be">
+                        <span>Primary</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab">
+            <div class="home">Home</div>
+            <div class="profile">Profile</div>
+        </div>
+    </section>
+
+    <section class="chat" aria-label="Chemistry chat">
+        <h3>Dr. Lewis</h3>
+        <div id="chat" class="messages"></div>
+        <div class="chat-footer">
+            <input id="message-input" class="chat-input" type="text" placeholder="Type your question here...">
+            <button type="button" id="sendQuestion" class="send">Send</button>
+        </div>
+    </section>
+</section>
 {% endblock %}
