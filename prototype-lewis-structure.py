@@ -125,16 +125,16 @@ def build_graph(chemDict, central):
             continue
 
         for i in range(count):
-            name = f"{atom}{i+1}"
+            atom_name = f"{atom}{i+1}"
 
-            G.add_node(name, element = atom, valence = get_valence_electrons(atom), lone_electrons = get_valence_electrons(atom), bonds = 0)
-            G.add_edge(central, name, order = 1)
+            G.add_node(atom_name, element = atom, valence = get_valence_electrons(atom), lone_electrons = get_valence_electrons(atom), bonds = 0)
+            G.add_edge(central, atom_name, order = 1)
 
             G.nodes[central]["lone_electrons"] -= 1
-            G.nodes[name]["lone_electrons"] -= 1
+            G.nodes[atom_name]["lone_electrons"] -= 1
 
             G.nodes[central]["bonds"] += 1
-            G.nodes[name]["bonds"] += 1
+            G.nodes[atom_name]["bonds"] += 1
     return G
 
 def get_max_bonds(element):
@@ -257,41 +257,41 @@ def draw_molecule(G, positions):
     dwg = svgwrite.Drawing("molecule.svg", size=("400px", "400px"))
 
     scale = 150
-    offset_x = 200
-    offset_y = 200
+    canvas_offset_x = 200
+    canvas_offset_y = 200
 
     # Draw bonds
-    for u, v, data in G.edges(data = True):
-        order = data.get("order", 1)
+    for atom1, atom2, bond_data in G.edges(data = True):
+        order = bond_data.get("order", 1)
 
-        x1, y1 = position[u]
-        x2, y2 = position[v]
+        x1, y1 = position[atom1]
+        x2, y2 = position[atom2]
 
         # direction vector
-        dx = x2 - x1
-        dy = y2 - y1
-        length = np.sqrt(dx**2 + dy**2)
+        direction_x = x2 - x1
+        direction_y = y2 - y1
+        length = np.sqrt(direction_x**2 + direction_y**2)
 
         # perpendicular vector
-        px = -dy / length
-        py = dx / length
+        perp_x = -direction_y / length
+        perp_y = direction_x / length
 
         for i in range(order):
             offset = (i - (order - 1) / 2) * 10
 
             dwg.add(dwg.line(
                 start=(
-                    x1 * scale + offset_x + px * offset,
-                    -y1 * scale + offset_y + py * offset
+                    x1 * scale + canvas_offset_x + perp_x * offset,
+                    -y1 * scale + canvas_offset_y + perp_y * offset
                 ),
                 end=(
-                    x2 * scale + offset_x + px * offset,
-                    -y2 * scale + offset_y + py * offset
+                    x2 * scale + canvas_offset_x + perp_x * offset,
+                    -y2 * scale + canvas_offset_y + perp_y * offset
                 ),
                 stroke="black"
             ))
 
-        print(u, "-", v, "order:", data["order"])
+        print(atom1, "-", atom2, "order:", bond_data["order"])
 
     # Draw atoms
     for node in G.nodes():
@@ -301,8 +301,8 @@ def draw_molecule(G, positions):
 
         bond_angles = []
         for neighbor in neighbors:
-            nx, ny = position[neighbor]
-            angle = np.arctan2(ny - y, nx - x)
+            neighbor_x, neighbor_y = position[neighbor]
+            angle = np.arctan2(neighbor_y - y, neighbor_x - x)
             bond_angles.append(angle)
         
         all_angles = [i * (np.pi / 2) for i in range(4)]  # 0°, 90°, 180°, 270°
@@ -314,7 +314,7 @@ def draw_molecule(G, positions):
                 free_angles.append(a)
 
         dwg.add(dwg.circle(
-            center=(x * scale + offset_x, -y * scale + offset_y),
+            center=(x * scale + canvas_offset_x, -y * scale + canvas_offset_y),
             r=20,
             fill="white",
             stroke="black"
@@ -324,27 +324,27 @@ def draw_molecule(G, positions):
         for i in range(min(lone_pairs, len(free_angles))):
             angle = free_angles[i]
 
-            dx = 30 * np.cos(angle)
-            dy = 30 * np.sin(angle)
+            direction_x = 30 * np.cos(angle)
+            direction_y = 30 * np.sin(angle)
 
             # draw 2 dots per pair
             dwg.add(dwg.circle(
-                center=(x * scale + offset_x + dx - 3,
-                        -y * scale + offset_y + dy),
+                center=(x * scale + canvas_offset_x + direction_x - 3,
+                        -y * scale + canvas_offset_y + direction_y),
                 r=2,
                 fill="black"
             ))
 
             dwg.add(dwg.circle(
-                center=(x * scale + offset_x + dx + 3,
-                        -y * scale + offset_y + dy),
+                center=(x * scale + canvas_offset_x + direction_x + 3,
+                        -y * scale + canvas_offset_y + direction_y),
                 r=2,
                 fill="black"
             ))
 
         dwg.add(dwg.text(
             G.nodes[node]["element"],
-            insert=(x * scale + offset_x - 8, -y * scale + offset_y + 5)
+            insert=(x * scale + canvas_offset_x - 8, -y * scale + canvas_offset_y + 5)
         ))
 
     dwg.save()
