@@ -3,7 +3,7 @@ from rdkit.Chem import AllChem
 import py3Dmol
 import json
 
-from prototype_lewis_structure import assign_lone_pairs
+import prototype_lewis_structure
 
 # (bonding_pairs, lone_pairs): geometry
 VSEPR_TABLE = {
@@ -88,12 +88,35 @@ def findCentral(chemDict):
     
     return centralAtom
 
+def findBonds(G):
+    bonds = []
+
+    for atom1, atom2, bond_data in G.edges(data = True):
+        bond = {}
+        stringAtom2 = ''.join(char for char in atom2 if not char.isdigit())
+        bond["to"] = stringAtom2
+        bond["bond_order"] = bond_data["order"]
+        bonds.append(bond)
+    print(bonds)
+    return bonds
+
+def findVSEPR(G):
+    bonding_pairs = len(G.edges())
+    lone_pairs = G.nodes[central]["lone_pairs"]
+
+    for key, values in VSEPR_TABLE.items():
+        if (bonding_pairs, lone_pairs) == key:
+            structureVSEPR = values
+
+    return structureVSEPR
 # TODO: need to be able to compute this from a function
 #       this is a temp dictionary for now
+"""
 bonds = [
     {"to": "O", "bond_order": 2},
     {"to": "O", "bond_order": 2}
 ]
+"""
 
 def findSMILES(structure3D, centralAtom, chemDict, bond_order):
     """
@@ -140,10 +163,16 @@ def findSMILES(structure3D, centralAtom, chemDict, bond_order):
 
     return smilesForm, containsHydrogen
 
-molecule = userMolecule()
-central = findCentral(molecule)
+molecule = prototype_lewis_structure.parsed
+central = prototype_lewis_structure.central
+
+networkxGraph = prototype_lewis_structure.G
+
+bonds = findBonds(networkxGraph)
+structureVSEPR = findVSEPR(networkxGraph)
+
 #bonds, centralLonePairs, structure3D =  buildBondListAndVSEPR(molecule, central)
-smiles, containsHydrogen = findSMILES("linear2", central, molecule, bonds)
+smiles, containsHydrogen = findSMILES(structureVSEPR, central, molecule, bonds)
 
 # print(smiles, containsHydrogen)
 # Create water molecule from SMILES (need to learn the notation)
