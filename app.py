@@ -4,6 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import re
+import prototype_vsepr
 
 load_dotenv()
 
@@ -40,7 +42,42 @@ def chat():
                 "system_instruction": system_prompt
             }
         )
-        return jsonify({"reply": response.text})
+
+        reply = response.text
+
+        CallLewis = re.search(r"LEWISFUNCTION\((.*?)\)", reply)
+        Call3D = re.search(r"VSEPRFUNCTION\((.*?)\)", reply)
+
+        LewisStructure = None
+        VSEPRModel = None
+
+
+        if CallLewis:
+            formula = CallLewis.group(1)
+            
+            prototype_vsepr.main(formula)
+            
+            reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
+            
+
+            LewisStructure = "/molecule.svg"
+
+        elif Call3D:
+            formula = Call3D.group(1)
+            
+            prototype_vsepr.main(formula)
+            
+            reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
+            
+
+            VSEPRModel = "/static/html_visualisation.html" 
+
+        return jsonify({
+            "reply": reply,
+            "LewisStructure": LewisStructure,
+            "VSEPR": VSEPRModel,
+        })
+    
     except Exception as e:
         return jsonify({"reply": "Something went wrong."}), 500
 

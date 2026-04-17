@@ -17,19 +17,44 @@ async function sendMessage() {
     chat.scrollTop = chat.scrollHeight;
     input.value = '';
 
-    const res = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
-    });
+    try {
+        const res = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
 
-    const data = await res.json();
-    const botMsg = document.createElement('div');
+        const data = await res.json();
+        const botMsg = document.createElement('div');
+        
+        botMsg.className = 'messages messages--bot';
+        botMsg.textContent = data.reply;
+        chat.appendChild(botMsg);
 
-    botMsg.className = 'messages messages--bot';
-    botMsg.textContent = data.reply;
-    chat.appendChild(botMsg);
-    chat.scrollTop = chat.scrollHeight;
+        if (data.LewisStructure || data.VSEPR) {
+            const chemCard = createChemistryCard(data.VSEPR, data.LewisStructure);
+            chat.appendChild(chemCard);
+        }
+
+        chat.scrollTop = chat.scrollHeight;
+
+    } catch (e) {
+        console.error("Fetch error:", e);
+    }
+}
+
+function createChemistryCard(vsepr, lewis) {
+    const container = document.createElement('div');
+    container.className = 'chemistry-card';
+    
+    container.innerHTML = `
+        <div class="viewer-container">
+            ${vsepr ? `<iframe src="/static/html_visualisation.html" class="mol-viewer"></iframe>` : ''}
+            ${lewis ? `<object data="/static/molecule.svg" type="image/svg+xml" class="lewis-structure"></object>` : ''}
+        </div>
+    `;
+    
+    return container;
 }
 
 btn.addEventListener('click', sendMessage);

@@ -254,7 +254,7 @@ def draw_molecule(G, positions):
         None
     """
     position = {node: tuple(positions[node])for node in positions}
-    dwg = svgwrite.Drawing("molecule.svg", size=("400px", "400px"))
+    dwg = svgwrite.Drawing("static/molecule.svg", size=("400px", "400px"))
 
     scale = 150
     canvas_offset_x = 200
@@ -349,26 +349,27 @@ def draw_molecule(G, positions):
 
     dwg.save()
 
-formula = input("Enter a chemical formula: ")
+def main(formula):
+    parsed = parse_formula(formula)
 
-parsed = parse_formula(formula)
+    print("Valence electrons per atom:")
 
-print("Valence electrons per atom:")
+    for atom, count in parsed.items():
+        valence = get_valence_electrons(atom)
+        print(f"{atom}: {valence} × {count} = {valence * count}")
 
-for atom, count in parsed.items():
-    valence = get_valence_electrons(atom)
-    print(f"{atom}: {valence} × {count} = {valence * count}")
+    total_valence = sum(
+        get_valence_electrons(atom) * count
+        for atom, count in parsed.items()
+    )
 
-total_valence = sum(
-    get_valence_electrons(atom) * count
-    for atom, count in parsed.items()
-)
+    print("Total valence electrons:", total_valence)
 
-print("Total valence electrons:", total_valence)
+    central = find_central_atom(parsed)
+    G = build_graph(parsed, central)
+    upgrade_bonds(G, central)
+    assign_lone_pairs(G)
+    positions = generate_positions(G, central)
+    draw_molecule(G, positions)
 
-central = find_central_atom(parsed)
-G = build_graph(parsed, central)
-upgrade_bonds(G, central)
-assign_lone_pairs(G)
-positions = generate_positions(G, central)
-draw_molecule(G, positions)
+    return parsed, central, G

@@ -100,7 +100,7 @@ def findBonds(G):
     print(bonds)
     return bonds
 
-def findVSEPR(G):
+def findVSEPR(G, central):
     bonding_pairs = len(G.edges())
     lone_pairs = G.nodes[central]["lone_pairs"]
 
@@ -149,7 +149,7 @@ def findSMILES(structure3D, centralAtom, chemDict, bond_order):
     print(structure3D, centralAtom, chemDict, bond_order)
 
     if structure3D == "linear2":
-        for bond in bonds:
+        for bond in bond_order:
             if bond["to"] == "H":
                 bond["to"] = "[H]"
 
@@ -164,37 +164,35 @@ def findSMILES(structure3D, centralAtom, chemDict, bond_order):
 
     return smilesForm, containsHydrogen
 
-molecule = prototype_lewis_structure.parsed
-central = prototype_lewis_structure.central
+def main(formula):
+    molecule, central, networkxGraph = prototype_lewis_structure.main(formula)
 
-networkxGraph = prototype_lewis_structure.G
+    bonds = findBonds(networkxGraph)
+    structureVSEPR = findVSEPR(networkxGraph, central)
 
-bonds = findBonds(networkxGraph)
-structureVSEPR = findVSEPR(networkxGraph)
+    #bonds, centralLonePairs, structure3D =  buildBondListAndVSEPR(molecule, central)
+    smiles, containsHydrogen = findSMILES(structureVSEPR, central, molecule, bonds)
 
-#bonds, centralLonePairs, structure3D =  buildBondListAndVSEPR(molecule, central)
-smiles, containsHydrogen = findSMILES(structureVSEPR, central, molecule, bonds)
+    # print(smiles, containsHydrogen)
+    # Create water molecule from SMILES (need to learn the notation)
+    mol = Chem.MolFromSmiles(smiles)
 
-# print(smiles, containsHydrogen)
-# Create water molecule from SMILES (need to learn the notation)
-mol = Chem.MolFromSmiles(smiles)
+    # Add explicit hydrogens
+    if containsHydrogen:
+        mol = Chem.AddHs(mol)
+        
+    # Generate 3D coordinates
+    AllChem.EmbedMolecule(mol)
+    AllChem.UFFOptimizeMolecule(mol)
 
-# Add explicit hydrogens
-if containsHydrogen:
-    mol = Chem.AddHs(mol)
-    
-# Generate 3D coordinates
-AllChem.EmbedMolecule(mol)
-AllChem.UFFOptimizeMolecule(mol)
+    # Convert molecule to MOL block format
+    mol_block = Chem.MolToMolBlock(mol)
 
-# Convert molecule to MOL block format
-mol_block = Chem.MolToMolBlock(mol)
-
-# Send to Py3Dmol viewer
-view = py3Dmol.view(width=400, height=400)
-view.addModel(mol_block, "mol")
-view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
-view.zoomTo()
-#view.show()
-with open('templates/html_visualisation.html', 'w') as f:
-    view.write_html(f, fullpage=True)
+    # Send to Py3Dmol viewer
+    view = py3Dmol.view(width=400, height=400)
+    view.addModel(mol_block, "mol")
+    view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
+    view.zoomTo()
+    #view.show()
+    with open('static/html_visualisation.html', 'w') as f:
+        view.write_html(f, fullpage=True)
