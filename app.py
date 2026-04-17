@@ -62,7 +62,7 @@ def chat():
 
             LewisStructure = "/molecule.svg"
 
-        elif Call3D:
+        if Call3D:
             formula = Call3D.group(1)
             
             prototype_vsepr.main(formula)
