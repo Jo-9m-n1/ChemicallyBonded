@@ -31,7 +31,7 @@ def index():
 @app.route("/chat", methods=["POST"])
 def chat():
     excuses = [
-        "Dr. Lewis's wife just found a 'Tinder Platinum' charge on their joint card. He is currently sprinting toward the backyard.",
+        "Dr. Lewis' wife just found a 'Tinder Platinum' charge on their joint card. He is currently sprinting toward the backyard.",
         "He's been cornered near the shed. She has a heavy frying pan.",
         "He's now hiding in the attic. He also forgot that it was their 10th anniversary.",
         "The attic hatch has been breached. He is currently trying to negotiate a peace treaty",
@@ -93,7 +93,7 @@ def chat():
             
         current_msg = excuses[current_index]
         session['story'] = min(current_index + 1, len(excuses) - 1)
-        
+
         print(f"Error: {e}")
         return jsonify({"reply": current_msg}), 500
 
