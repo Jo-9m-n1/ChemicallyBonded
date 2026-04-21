@@ -353,7 +353,7 @@ def draw_molecule(G, positions):
     and lone pairs positioned symmetrically around each atom.
     """
     position = {node: tuple(positions[node]) for node in positions}
-    dwg = svgwrite.Drawing("molecule.svg", size=("400px", "400px"))
+    dwg = svgwrite.Drawing("static/molecule.svg", size=("400px", "400px"))
 
     scale = 150
     canvas_offset_x = 200
@@ -382,7 +382,7 @@ def draw_molecule(G, positions):
                     x2 * scale + canvas_offset_x + perp_x * offset,
                     -y2 * scale + canvas_offset_y + perp_y * offset
                 ),
-                stroke="white"
+                stroke="black"
             ))
 
     for node in G.nodes():
@@ -435,7 +435,7 @@ def draw_molecule(G, positions):
                             -y * scale + canvas_offset_y - dist * np.sin(angle) - py * offset
                         ),
                         r=2,
-                        fill="white"
+                        fill="black"
                     ))
 
         dwg.add(dwg.text(

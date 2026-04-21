@@ -9,6 +9,8 @@ import prototype_vsepr
 
 load_dotenv()
 
+WELCOME_MESSAGE = "Hi! Welcome to my office, how can I help you today?"
+
 app = Flask(__name__)
 
 API_KEY = os.getenv('API')
@@ -23,6 +25,15 @@ class Conversation(db.Model):
     title = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey("conversation.id"), nullable=False)
+    is_user = db.Column(db.Boolean, nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    lewis_structure = db.Column(db.String(500))
+    vsepr = db.Column(db.String(500))
+
 @app.route("/")
 def index():
     session.pop('story', None)
@@ -31,19 +42,24 @@ def index():
 @app.route("/chat", methods=["POST"])
 def chat():
     excuses = [
-        "Dr. Lewis' wife just found a 'Tinder Platinum' charge on their joint card. He is currently sprinting toward the backyard.",
-        "He's been cornered near the shed. She has a heavy frying pan.",
-        "He's now hiding in the attic. He also forgot that it was their 10th anniversary.",
-        "The attic hatch has been breached. He is currently trying to negotiate a peace treaty",
-        "He's been caught. He is currently begging for forgiveness in the driveway while neighbors watch.",
-        "His wife hit him with a frying pan after finding out that he texted someone named Michelle.",
-        "He's officially 'missing' after his wife went through his browser history.",
+        "Dr. Lewis' wife just found a 'Tinder Platinum' charge on their joint card. He is currently sprinting toward the backyard. Try again later.",
+        "He's been cornered near the shed. She has a heavy frying pan. Try again later.",
+        "He's now hiding in the attic. He also forgot that it was their 10th anniversary. Try again later.",
+        "The attic hatch has been breached. He is currently trying to negotiate a peace treaty. Try again later.",
+        "He's been caught. He is currently begging for forgiveness in the driveway while neighbors watch. Try again later.",
+        "His wife hit him with a frying pan after finding out that he texted someone named Michelle. Try again later.",
+        "He's officially 'missing' after his wife went through his browser history. Try again later.",
         "You are invited to his funeral."
     ]
 
     data = request.json
     user_message = data.get("message")
-    
+    conv_id = data.get("conversation_id")
+
+    conv = Conversation.query.filter_by(id=conv_id, user_id=1).first() if conv_id else None
+    if not conv or not user_message:
+        return jsonify({"reply": "Pick a chat from the list or start a new one."}), 400
+
     LewisStructure = None
     VSEPRModel = None
 
@@ -68,13 +84,25 @@ def chat():
             formula = CallLewis.group(1)
             prototype_vsepr.main(formula)
             reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
-            LewisStructure = "/molecule.svg"
+            LewisStructure = "static/molecule.svg"
 
         if Call3D:
             formula = Call3D.group(1)
             prototype_vsepr.main(formula)
             reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
-            VSEPRModel = "/static/html_visualisation.html"
+            VSEPRModel = "static/html_visualisation.html"
+
+        db.session.add(Message(conversation_id=conv.id, is_user=True, text=user_message))
+        db.session.add(
+            Message(
+                conversation_id=conv.id,
+                is_user=False,
+                text=reply,
+                lewis_structure=LewisStructure,
+                vsepr=VSEPRModel,
+            )
+        )
+        db.session.commit()
 
         return jsonify({
             "reply": reply,
@@ -108,7 +136,33 @@ def newchat():
     new_chat = Conversation(user_id = 1, title=f"{datetime.now().strftime('%H:%M:%S')}")
     db.session.add(new_chat)
     db.session.commit()
+    db.session.add(
+        Message(conversation_id=new_chat.id, is_user=False, text=WELCOME_MESSAGE)
+    )
+    db.session.commit()
+    session["conv_id"] = new_chat.id
     return jsonify({'id': new_chat.id})
+
+
+@app.route("/conversation/<int:cid>/messages")
+def conversation_messages(cid):
+    conv = Conversation.query.filter_by(id=cid, user_id=1).first()
+    if not conv:
+        return jsonify([])
+    rows = (
+        Message.query.filter_by(conversation_id=cid).order_by(Message.id.asc()).all()
+    )
+    out = []
+    for m in rows:
+        out.append(
+            {
+                "role": "user" if m.is_user else "assistant",
+                "text": m.text,
+                "lewis_structure": m.lewis_structure,
+                "vsepr": m.vsepr,
+            }
+        )
+    return jsonify(out)
 
 if __name__ == "__main__":
     with app.app_context():

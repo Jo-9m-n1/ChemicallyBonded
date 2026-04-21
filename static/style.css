@@ -24,32 +24,54 @@ body {
     border-radius: 15px;
     padding: 10px;
     margin: 10px 0;
-    max-width: 80%;
-    align-self: flex-start;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    align-self: stretch;
+    box-sizing: border-box;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.vsepr-badge {
-    background-color: var(--bg-color-1, #b8b8ff);
-    color: #333;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: bold;
-    display: inline-block;
-    margin-bottom: 8px;
-    text-transform: capitalize;
-}
-
 .mol-viewer {
+    display: block;
+    align-self: stretch;
     width: 100%;
-    height: 250px;
+    max-width: 100%;
+    height: clamp(100px, 72vh, 380px);
     border-radius: 10px;
     border: none;
+    box-sizing: border-box;
+}
+
+.lewis-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    text-align: center;
+    line-height: 0;
+}
+
+.lewis-structure {
+    display: inline-block;
+    max-width: 100%;
+    max-height: min(52vh, 520px);
+    width: auto;
+    height: auto;
+    vertical-align: middle;
+    border-radius: 10px;
+    box-sizing: border-box;
+    object-fit: contain;
 }
 
 .viewer-container {
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: auto;
     border-radius: 10px;
 }
 
@@ -66,6 +88,7 @@ body {
 
 .chat {
     flex: 1;
+    min-width: 0;
 }
 
 .left-box, .chat {
@@ -85,7 +108,8 @@ body {
 }
 
 #home-view, #profile-view {
-    flex-grow: 1; 
+    flex-grow: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -93,7 +117,9 @@ body {
 
 #history-list, #chat.messages {
     flex-grow: 1;
+    min-width: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
     display: flex;
     flex-direction: column;
@@ -171,11 +197,20 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.app-layout > .left-box {
+    flex: 0 0 300px;
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    box-sizing: border-box;
+}
+
 #left-box {
-    height: 70vh;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     gap: 0px;
-    width: 300px;
+    width: 100%;
 }
 
 .left-box h2 {
@@ -190,6 +225,12 @@ body {
 
 .history-item {
     padding:10px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.history-item:hover {
+    background: rgba(255, 255, 255, 0.35);
 }
 
 .tab, .chat-footer {
@@ -257,8 +298,11 @@ body {
 
 .color-picker-group {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 15px;
     align-items: center;
+    max-width: 100%;
 }
 
 .picker-item {

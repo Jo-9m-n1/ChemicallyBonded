@@ -77,15 +77,17 @@ def add_legend_to_html(output_file, atom_symbols):
     legend_html = f'''
     <div style="
         position:absolute;
-        top:45px;
-        right:45px;
-        background:#efedff;
-        padding:30px;
+        top:5px;
+        right:5px;
+        background:#E5F2FF;
+        padding:10px;
         border:2px solid #000000;
-        border-radius:25px;
+        border-radius:15px;
         z-index:9999;
         font-family:Trebuchet MS, sans-serif;
-        font-size:40px;
+        font-size:15px;
+        border: 0px;
+        overflow: hidden;
     ">
         <b>Legend:</b>
         {items}
@@ -290,12 +292,12 @@ def main(formula):
     mol_block = Chem.MolToMolBlock(mol)
 
     # Send to Py3Dmol viewer
-    view = py3Dmol.view(width=400, height=400)
+    view = py3Dmol.view(width=200, height=200)
     view.addModel(mol_block, "mol")
     view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
     view.zoomTo()
 
-    output_file = "templates/html_visualisation.html"
+    output_file = "static/html_visualisation.html"
     with open(output_file, "w", encoding="utf-8") as f:
         view.write_html(f, fullpage=True)
 
