@@ -55,10 +55,20 @@ def chat():
     data = request.json
     user_message = data.get("message")
     conv_id = data.get("conversation_id")
+    verbosity = data.get("verbosity", "medium")
 
     conv = Conversation.query.filter_by(id=conv_id, user_id=1).first() if conv_id else None
     if not conv or not user_message:
         return jsonify({"reply": "Pick a chat from the list or start a new one."}), 400
+
+    verbosity_map = {
+        "not at all": "Provide only essential function calls and a brief greeting. Minimal text. If you are using LEWISFUNCTION or VSEPRFUNCTION, output ONLY the function call with no text at all.",
+        "less": "Be extremely concise. Get straight to the point in 1-2 sentences.",
+        "medium": "Provide a standard, professional explanation of moderate length.",
+        "a lot": "Be very thorough. Explain the reasoning behind the concepts and provide detailed examples. Make sure that the student understand it."
+    }
+
+    selected_constraint = verbosity_map.get(verbosity, verbosity_map["medium"])
 
     LewisStructure = None
     VSEPRModel = None
@@ -67,11 +77,12 @@ def chat():
         with open("prompt.txt", "r", encoding="utf-8") as f:
             system_prompt = f.read()
 
+        system_prompt_with_verbosity = f"{system_prompt}\n\nVERBOSITY GUIDELINE: {selected_constraint}"
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=user_message,
             config={
-                "system_instruction": system_prompt
+                "system_instruction": system_prompt_with_verbosity
             }
         )
 

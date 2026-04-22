@@ -8,6 +8,8 @@ const color3 = document.getElementById('color3');
 
 async function sendMessage() {
     const message = input.value.trim();
+    const verbosityDropdwon = document.getElementById('verbosity-select');
+    const verbosity = verbosityDropdwon ? verbosityDropdwon.value: 'meduim';
 
     if (!message) return;
 
@@ -22,15 +24,17 @@ async function sendMessage() {
         const res = await fetch('/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, conversation_id: currentConversationId })
+            body: JSON.stringify({ message, conversation_id: currentConversationId, verbosity: verbosity })
         });
 
         const data = await res.json();
-        const botMsg = document.createElement('div');
-        
-        botMsg.className = 'messages messages--bot';
-        botMsg.textContent = data.reply;
-        chat.appendChild(botMsg);
+
+        if (data.reply && data.reply.trim().length > 0) {
+            const botMsg = document.createElement('div');
+            botMsg.className = 'messages messages--bot';
+            botMsg.textContent = data.reply;
+            chat.appendChild(botMsg);
+        }
 
         if (data.LewisStructure || data.VSEPR) {
             const chemCard = createChemistryCard(data.VSEPR, data.LewisStructure);
