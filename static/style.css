@@ -1,6 +1,6 @@
 :root {
     --bg-color-1: #b8b8ff;
-    --bg-color-2: #f8f7ff;
+    --bg-color-2: #e7e3ff;
     --bg-color-3: #ffd8be;
 }
 
@@ -79,7 +79,7 @@ body {
     display: none;
 }
 
-.chat h3 {
+h3 {
     margin: 0px;
     color: black;
     text-align: center;
@@ -282,7 +282,7 @@ body {
 
 .new-chat-btn {
     padding: 10px;
-    margin-bottom: 10px;
+    margin: 10px;
     border-radius: 25px;
     border: 0px solid;
     background-color: rgba(82, 171, 255, 0.1);
