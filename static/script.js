@@ -142,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
         profileBtn.addEventListener('click', () => {
             homeView.style.display = 'none';
             profileView.style.display = 'flex';
+            homeBtn.classList.remove('tab-segment--active');
+            profileBtn.classList.add('tab-segment--active');
         });
     }
     
@@ -149,8 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
         homeBtn.addEventListener('click', () => {
             profileView.style.display = 'none';
             homeView.style.display = 'flex';
+            profileBtn.classList.remove('tab-segment--active');
+            homeBtn.classList.add('tab-segment--active');
         });
     }
+
+    if (homeBtn) homeBtn.classList.add('tab-segment--active');
 });
 
 function updateBackground() {

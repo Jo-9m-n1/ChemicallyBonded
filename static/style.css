@@ -248,23 +248,36 @@ body {
     display: flex;
     width: 100%;
     margin-top: 10px;
+    padding: 4px;
+    gap: 4px;
     background: rgba(255, 255, 255, 0.4);
     border-radius: 25px;
-    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
     flex-shrink: 0;
 }
 
-.home, .profile {
+.tab-segment {
     flex: 1;
-    padding: 6px;
+    padding: 10px 12px;
     text-align: center;
-    width: fit-content;
-    margin: 0 auto;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
 }
 
-.home:hover, .profile:hover {
-    transform: translateY(-1px);
-    cursor: pointer;
+.tab-segment--active {
+    background: rgba(37, 99, 235, 0.78);
+    color: #fff;
+}
+
+.tab-segment:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.6);
+    outline-offset: 2px;
 }
 
 .new-chat-btn {
