@@ -52,8 +52,21 @@ def validate_molecule(chemDict):
     Returns:
         (bool, str): (is_valid, message)
     """
-    has_metal = any(elements[a]["type"] == "metal" for a in chemDict)
-    has_nonmetal = any(elements[a]["type"] == "nonmetal" for a in chemDict)
+    covalent_metals = ["Be", "Al", "Sn"]
+
+    has_metal = False
+    has_nonmetal = False
+
+    for atom in chemDict:
+        atom_type = elements[atom]["type"]
+
+        if atom_type == "metal" and atom not in covalent_metals:
+            has_metal = True
+        elif atom_type == "nonmetal":
+            has_nonmetal = True
+
+        if has_metal and has_nonmetal:
+            break
 
     if has_metal and has_nonmetal:
         return False, "Ionic compounds are not supported."
@@ -62,16 +75,23 @@ def validate_molecule(chemDict):
         if elements[atom]["max_bonds"] == 0:
             return False, f"{atom} does not form bonds."
 
-    total_bonds_possible = sum(
-        elements[a]["max_bonds"] * count
-        for a, count in chemDict.items()
-    )
+    expanded_octet_atoms = ["P", "S", "Se", "Te", "Cl", "Br", "I", "Xe"]
+
+    total_bonds_possible = 0
+
+    for atom, count in chemDict.items():
+        max_bonds = elements[atom]["max_bonds"]
+        total_bonds_possible += max_bonds * count
+
+    if not is_supported_structure(chemDict):
+        return False, "This molecule is not supported (only single-center molecules up to 7 atoms)."
 
     total_atoms = sum(chemDict.values())
 
-    if total_bonds_possible < (total_atoms - 1) * 2:
-        return False, "Molecule is not chemically valid (insufficient bonding)."
-
+    if not any(atom in expanded_octet_atoms for atom in chemDict):
+        if total_bonds_possible < (total_atoms - 1) * 2:
+            return False, "Molecule is not chemically valid (insufficient bonding)"
+    
     return True, "Valid molecule"
 
 def is_diatomic(chemDict):
@@ -85,6 +105,26 @@ def is_diatomic(chemDict):
         bool: True if the molecule is diatomic, False otherwise
     """
     return len(chemDict) == 1 and list(chemDict.values())[0] == 2
+
+def is_supported_structure(chemDict):
+    if is_diatomic(chemDict):
+        return True
+
+    total_atoms = sum(chemDict.values())
+    if total_atoms > 7:
+        return False
+
+    if len(chemDict) == 1:
+        return True
+
+    central = find_central_atom(chemDict)
+
+    outer_atoms = sum(count for atom, count in chemDict.items() if atom != central)
+
+    if outer_atoms > 6:
+        return False
+
+    return True
 
 def get_valence_electrons(atom):
     """
@@ -110,9 +150,18 @@ def find_central_atom(chemDict):
     Returns:
         str: The selected central atom of the molecule
     """
-    priority = ["C", "N", "P", "S", "O", "Br", "Cl", "I", "F"]
+    if len(chemDict) == 1:
+        return list(chemDict.keys())[0]
 
     candidates = [atom for atom in chemDict if atom != "H"]
+
+    halogens = ["F", "Cl", "Br", "I"]
+    non_halogens = [a for a in candidates if a not in halogens]
+
+    if non_halogens:
+        candidates = non_halogens
+
+    priority = ["C", "N", "P", "S", "Be", "Al", "Sn", "Xe", "Cl", "Br", "O"]
 
     for p in priority:
         if p in candidates:
@@ -188,48 +237,40 @@ def build_graph(chemDict, central):
     """
     G = nx.Graph()
 
-    G.add_node(central, element = central, valence = get_valence_electrons(central), lone_electrons = get_valence_electrons(central), bonds = 0)
+    G.add_node(central, element=central, valence=get_valence_electrons(central), lone_electrons=get_valence_electrons(central), bonds=0)
 
     for atom, count in chemDict.items():
         if atom == central:
-            continue
+            extra_atoms = count - 1
 
-        for i in range(count):
-            atom_name = f"{atom}{i+1}"
+            for i in range(extra_atoms):
+                atom_name = f"{atom}{i+1}"
 
-            G.add_node(atom_name, element = atom, valence = get_valence_electrons(atom), lone_electrons = get_valence_electrons(atom), bonds = 0)
-            G.add_edge(central, atom_name, order = 1)
+                G.add_node(atom_name, element=atom, valence=get_valence_electrons(atom), lone_electrons=get_valence_electrons(atom), bonds=0)
 
-            G.nodes[central]["lone_electrons"] -= 1
-            G.nodes[atom_name]["lone_electrons"] -= 1
+                G.add_edge(central, atom_name, order=1)
 
-            G.nodes[central]["bonds"] += 1
-            G.nodes[atom_name]["bonds"] += 1
+                G.nodes[central]["lone_electrons"] -= 1
+                G.nodes[atom_name]["lone_electrons"] -= 1
+
+                G.nodes[central]["bonds"] += 1
+                G.nodes[atom_name]["bonds"] += 1
+
+        else:
+            for i in range(count):
+                atom_name = f"{atom}{i+1}"
+
+                G.add_node(atom_name, element=atom, valence=get_valence_electrons(atom), lone_electrons=get_valence_electrons(atom), bonds=0)
+
+                G.add_edge(central, atom_name, order=1)
+
+                G.nodes[central]["lone_electrons"] -= 1
+                G.nodes[atom_name]["lone_electrons"] -= 1
+
+                G.nodes[central]["bonds"] += 1
+                G.nodes[atom_name]["bonds"] += 1
+
     return G
-
-def get_max_bonds(element):
-    """
-    Determine the maximum number of bonds an atom can form
-    based on simplified chemical rules.
-
-    Args:
-        element (str): The chemical symbol of the atom
-
-    Returns:
-        int: Maximum number of bonds allowed for the atom
-    """
-    if element == "H":
-        return 1
-    elif element in ["F", "Cl", "Br", "I"]:
-        return 1
-    elif element == "O":
-        return 2
-    elif element == "N":
-        return 3
-    elif element == "C":
-        return 4
-    else:
-        return 1
 
 def upgrade_bonds(G, central):
     """
@@ -250,7 +291,7 @@ def upgrade_bonds(G, central):
         neighbor = neighbors[0]
         element = G.nodes[neighbor]["element"]
 
-        max_bonds = get_max_bonds(element)
+        max_bonds = elements[element]["max_bonds"]
 
         while G[central][neighbor]["order"] < max_bonds:
             G[central][neighbor]["order"] += 1
@@ -271,13 +312,12 @@ def upgrade_bonds(G, central):
         for neighbor in neighbors:
             element = G.nodes[neighbor]["element"]
             current_bonds = G.nodes[neighbor]["bonds"]
-            max_bonds = get_max_bonds(element)
 
-            need = max_bonds - current_bonds
-
-            # prevent hydrogen from upgrading
-            if element == "H":
+            if element in ["H", "F", "Cl", "Br", "I"]:
                 continue
+
+            max_bonds = elements[element]["max_bonds"]
+            need = max_bonds - current_bonds
 
             if need > best_need and G[central][neighbor]["order"] < 3:
                 best_need = need
@@ -294,7 +334,7 @@ def upgrade_bonds(G, central):
         G.nodes[central]["bonds"] += 1
         G.nodes[best_neighbor]["bonds"] += 1
 
-def generate_positions(G, central, bond_length = 1.0):
+def generate_positions(G, central):
     """
     Generate 2D positions for each atom by placing surrounding atoms
     evenly around the central atom in a circular layout.
@@ -312,24 +352,35 @@ def generate_positions(G, central, bond_length = 1.0):
     
     neighbors = list(G.neighbors(central))
     n = len(neighbors)
-    
-    if n == 2 and central == "O":
-        angle = np.radians(104.5)
-        positions[neighbors[0]] = np.array([-0.5, -0.5])
-        
-        positions[neighbors[1]] = np.array([0.5, -0.5])
+    lone_pairs = G.nodes[central].get("lone_pairs", 0)
 
-    else:
-        if n == 0:
+    if n == 2:
+        if lone_pairs == 3:
+            positions[neighbors[0]] = np.array([-1.0, 0.0])
+            positions[neighbors[1]] = np.array([1.0, 0.0])
             return positions
-        angle_step = 2 * np.pi / n
 
-        for i, atom in enumerate(neighbors):
-            angle = i * angle_step
-            positions[atom] = np.array([
-                bond_length * np.cos(angle),
-                bond_length * np.sin(angle)
-            ])
+        elif lone_pairs >= 1:
+            bond_angle = np.radians(104.5)
+            half = bond_angle / 2
+
+            positions[neighbors[0]] = np.array([-np.cos(half), -np.sin(half)])
+            positions[neighbors[1]] = np.array([np.cos(half), -np.sin(half)])
+            return positions
+
+        else:
+            positions[neighbors[0]] = np.array([-1.0, 0.0])
+            positions[neighbors[1]] = np.array([1.0, 0.0])
+            return positions
+
+    if n == 0:
+        return positions
+
+    angle_step = 2 * np.pi / n
+
+    for i, atom in enumerate(neighbors):
+        angle = i * angle_step
+        positions[atom] = np.array([np.cos(angle), np.sin(angle)])
 
     return positions
 
@@ -382,7 +433,7 @@ def draw_molecule(G, positions):
                     x2 * scale + canvas_offset_x + perp_x * offset,
                     -y2 * scale + canvas_offset_y + perp_y * offset
                 ),
-                stroke="black"
+                stroke="white"
             ))
 
     for node in G.nodes():
@@ -411,14 +462,24 @@ def draw_molecule(G, positions):
                     np.sum([np.cos(a) for a in bond_angles])
                 )
                 opposite_angle = avg_bond_angle + np.pi
-                
-                spread = np.radians(50) 
+
                 if lone_pairs == 1:
                     pair_angles = [opposite_angle]
+
+                elif lone_pairs == 2:
+                    spread = np.radians(50)
+                    pair_angles = [opposite_angle - spread / 2, opposite_angle + spread / 2]
+
+                elif lone_pairs == 3:
+                    pair_angles = [opposite_angle, opposite_angle + (2 * np.pi / 3), opposite_angle - (2 * np.pi / 3)]
+
                 else:
-                    pair_angles = [opposite_angle - spread/2, opposite_angle + spread/2]
+                    pair_angles = []
             else:
-                all_angles = [i * (np.pi / 2) for i in range(4)]
+                primary_angles = [i * (np.pi / 2) for i in range(4)]
+                secondary_angles = [np.pi/4 + i * (np.pi / 2) for i in range(4)]
+                all_angles = primary_angles + secondary_angles
+
                 pair_angles = [a for a in all_angles if all(angle_diff(a, b) > 0.5 for b in bond_angles)]
 
             for i in range(min(lone_pairs, len(pair_angles))):
@@ -435,7 +496,7 @@ def draw_molecule(G, positions):
                             -y * scale + canvas_offset_y - dist * np.sin(angle) - py * offset
                         ),
                         r=2,
-                        fill="black"
+                        fill="white"
                     ))
 
         dwg.add(dwg.text(
