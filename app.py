@@ -93,15 +93,21 @@ def chat():
 
         if CallLewis:
             formula = CallLewis.group(1)
-            prototype_vsepr.main(formula)
-            reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
-            LewisStructure = "static/molecule.svg"
+            response = prototype_vsepr.main(formula)
+            if response is None:
+                reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
+                LewisStructure = "static/molecule.svg"
+            else:
+                reply = response
 
         if Call3D:
             formula = Call3D.group(1)
-            prototype_vsepr.main(formula)
-            reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
-            VSEPRModel = "static/html_visualisation.html"
+            response = prototype_vsepr.main(formula)
+            if response is None:
+                reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
+                VSEPRModel = "static/html_visualisation.html"
+            else:
+                reply = response
 
         db.session.add(Message(conversation_id=conv.id, is_user=True, text=user_message))
         db.session.add(

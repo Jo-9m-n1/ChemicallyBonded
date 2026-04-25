@@ -6,6 +6,12 @@ import json
 with open("static/periodic_table.json") as file:
     elements = json.load(file)
 
+covalent_metals = ["Be", "Al", "Sn"]
+expanded_octet_atoms = ["P", "S", "Se", "Te", "Cl", "Br", "I", "Xe"]
+central_atom_priority = ["C", "N", "P", "S", "Be", "Al", "Sn", "Xe", "Cl", "Br", "O"]
+halogen_atoms = ["F", "Cl", "Br", "I"]
+terminal_atoms = ["H", "F", "Cl", "Br", "I"]
+
 def parse_formula(formula):
     """
     Parse a chemical formula string into a dictionary containing
@@ -46,18 +52,21 @@ def parse_formula(formula):
 def validate_molecule(chemDict):
     """
     Validate if the molecule is supported:
+    - Reject atoms that don't exist
     - Reject ionic (metal + nonmetal)
     - Reject impossible valence combinations
 
     Returns:
         (bool, str): (is_valid, message)
     """
-    covalent_metals = ["Be", "Al", "Sn"]
-
     has_metal = False
     has_nonmetal = False
+    has_expanded_octet_atom = False
 
     for atom in chemDict:
+        if atom not in elements:
+            return False, f"{atom} is not a valid atom symbol in my knowledge! Could you please try with another molecule?"
+
         atom_type = elements[atom]["type"]
 
         if atom_type == "metal" and atom not in covalent_metals:
@@ -65,33 +74,32 @@ def validate_molecule(chemDict):
         elif atom_type == "nonmetal":
             has_nonmetal = True
 
-        if has_metal and has_nonmetal:
-            break
-
     if has_metal and has_nonmetal:
-        return False, "Ionic compounds are not supported."
+        return False, "I may have a PhD in chemistry but I do not know how to draw ionic compounds."
 
     for atom in chemDict:
         if elements[atom]["max_bonds"] == 0:
             return False, f"{atom} does not form bonds."
 
-    expanded_octet_atoms = ["P", "S", "Se", "Te", "Cl", "Br", "I", "Xe"]
+    if not is_supported_structure(chemDict):
+        return False, "I may have a PhD in chemistry but I only know how to draw single-center molecules up to 7 atoms."
 
     total_bonds_possible = 0
-
     for atom, count in chemDict.items():
         max_bonds = elements[atom]["max_bonds"]
         total_bonds_possible += max_bonds * count
 
-    if not is_supported_structure(chemDict):
-        return False, "This molecule is not supported (only single-center molecules up to 7 atoms)."
-
     total_atoms = sum(chemDict.values())
+    for atom in chemDict:
+        if atom in expanded_octet_atoms:
+            has_expanded_octet_atom = True
+            break
 
-    if not any(atom in expanded_octet_atoms for atom in chemDict):
-        if total_bonds_possible < (total_atoms - 1) * 2:
+    if not has_expanded_octet_atom:
+        minimum_bonds_needed = (total_atoms - 1) * 2
+        if total_bonds_possible < minimum_bonds_needed:
             return False, "Molecule is not chemically valid (insufficient bonding)"
-    
+
     return True, "Valid molecule"
 
 def is_diatomic(chemDict):
@@ -104,9 +112,27 @@ def is_diatomic(chemDict):
     Returns:
         bool: True if the molecule is diatomic, False otherwise
     """
-    return len(chemDict) == 1 and list(chemDict.values())[0] == 2
+    if len(chemDict) != 1:
+        return False
+    
+    return list(chemDict.values())[0] == 2
 
 def is_supported_structure(chemDict):
+    """
+    Check whether the molecule fits the structural limits of this program.
+
+    Supported structures are:
+    - diatomic molecules
+    - single-element molecules
+    - molecules with up to 7 total atoms
+    - molecules with 1 central atom and up to 6 surrounding atoms
+
+    Args:
+        chemDict (dict): Dictionary containing atoms and their counts
+
+    Returns:
+        bool: True if the structure is supported, False otherwise
+    """
     if is_diatomic(chemDict):
         return True
 
@@ -115,11 +141,11 @@ def is_supported_structure(chemDict):
         return False
 
     if len(chemDict) == 1:
-        return True
+        only_atom_count = list(chemDict.values())[0]
+        return only_atom_count <= 3
 
     central = find_central_atom(chemDict)
-
-    outer_atoms = sum(count for atom, count in chemDict.items() if atom != central)
+    outer_atoms = total_atoms - chemDict[central]
 
     if outer_atoms > 6:
         return False
@@ -153,21 +179,20 @@ def find_central_atom(chemDict):
     if len(chemDict) == 1:
         return list(chemDict.keys())[0]
 
-    candidates = [atom for atom in chemDict if atom != "H"]
+    non_hydrogen_atoms = [atom for atom in chemDict if atom != "H"]
 
-    halogens = ["F", "Cl", "Br", "I"]
-    non_halogens = [a for a in candidates if a not in halogens]
+    non_halogen_atoms = [atom for atom in non_hydrogen_atoms if atom not in halogen_atoms]
 
-    if non_halogens:
-        candidates = non_halogens
+    if non_halogen_atoms:
+        candidate_atoms = non_halogen_atoms
+    else:
+        candidate_atoms = non_hydrogen_atoms
 
-    priority = ["C", "N", "P", "S", "Be", "Al", "Sn", "Xe", "Cl", "Br", "O"]
-
-    for p in priority:
-        if p in candidates:
-            return p
-
-    return candidates[0]
+    for atom in central_atom_priority:
+        if atom in candidate_atoms:
+            return atom
+    
+    return candidate_atoms[0]
 
 def assign_lone_pairs(G):
     """
@@ -190,6 +215,40 @@ def assign_lone_pairs(G):
         electrons = G.nodes[node]["lone_electrons"]
         G.nodes[node]["lone_pairs"] = electrons // 2
 
+def add_atom_node(G, atom_name, atom):
+    """
+    Add an atom node to the graph with its default properties.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+        atom_name (str): Unique node name
+        atom (str): Atom symbol
+
+    Returns:
+        None
+    """
+    valence = get_valence_electrons(atom)
+    G.add_node(atom_name, element=atom, valence=valence, lone_electrons=valence, bonds=0)
+
+def connect_atoms(G, atom1, atom2):
+    """
+    Connect two atoms with a single bond and update their
+    bond and lone electron counts.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+        atom1 (str): First atom label
+        atom2 (str): Second atom label
+
+    Returns:
+        None
+    """
+    G.add_edge(atom1, atom2, order=1)
+    G.nodes[atom1]["bonds"] += 1
+    G.nodes[atom2]["bonds"] += 1
+    G.nodes[atom1]["lone_electrons"] -= 1
+    G.nodes[atom2]["lone_electrons"] -= 1
+
 def build_diatomic_graph(chemDict):
     """
     Construct a graph for a diatomic molecule consisting of two identical atoms
@@ -208,18 +267,10 @@ def build_diatomic_graph(chemDict):
     atom1 = f"{atom}1"
     atom2 = f"{atom}2"
 
-    valence = get_valence_electrons(atom)
+    add_atom_node(G, atom1, atom)
+    add_atom_node(G, atom2, atom)
 
-    G.add_node(atom1, element = atom, valence = valence, lone_electrons = valence, bonds = 0)
-    G.add_node(atom2, element = atom, valence = valence, lone_electrons = valence, bonds = 0)
-
-    G.add_edge(atom1, atom2, order=1)
-
-    G.nodes[atom1]["bonds"] += 1
-    G.nodes[atom2]["bonds"] += 1
-
-    G.nodes[atom1]["lone_electrons"] -= 1
-    G.nodes[atom2]["lone_electrons"] -= 1
+    connect_atoms(G, atom1, atom2)
 
     return G, atom1
 
@@ -236,41 +287,39 @@ def build_graph(chemDict, central):
         networkx.Graph: Graph representing the molecule structure
     """
     G = nx.Graph()
-
-    G.add_node(central, element=central, valence=get_valence_electrons(central), lone_electrons=get_valence_electrons(central), bonds=0)
+    add_atom_node(G, central, central)
 
     for atom, count in chemDict.items():
         if atom == central:
-            extra_atoms = count - 1
-
-            for i in range(extra_atoms):
-                atom_name = f"{atom}{i+1}"
-
-                G.add_node(atom_name, element=atom, valence=get_valence_electrons(atom), lone_electrons=get_valence_electrons(atom), bonds=0)
-
-                G.add_edge(central, atom_name, order=1)
-
-                G.nodes[central]["lone_electrons"] -= 1
-                G.nodes[atom_name]["lone_electrons"] -= 1
-
-                G.nodes[central]["bonds"] += 1
-                G.nodes[atom_name]["bonds"] += 1
-
+            atoms_to_add = count - 1
         else:
-            for i in range(count):
-                atom_name = f"{atom}{i+1}"
+            atoms_to_add = count
 
-                G.add_node(atom_name, element=atom, valence=get_valence_electrons(atom), lone_electrons=get_valence_electrons(atom), bonds=0)
-
-                G.add_edge(central, atom_name, order=1)
-
-                G.nodes[central]["lone_electrons"] -= 1
-                G.nodes[atom_name]["lone_electrons"] -= 1
-
-                G.nodes[central]["bonds"] += 1
-                G.nodes[atom_name]["bonds"] += 1
+        for i in range(atoms_to_add):
+            atom_name = f"{atom}{i+1}"
+            add_atom_node(G, atom_name, atom)
+            connect_atoms(G, central, atom_name)
 
     return G
+
+def increase_bond_order(G, atom1, atom2):
+    """
+    Increase the bond order between two atoms by 1 and update
+    their bond and lone electron counts.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+        atom1 (str): First atom label
+        atom2 (str): Second atom label
+
+    Returns:
+        None
+    """
+    G[atom1][atom2]["order"] += 1
+    G.nodes[atom1]["lone_electrons"] -= 1
+    G.nodes[atom2]["lone_electrons"] -= 1
+    G.nodes[atom1]["bonds"] += 1
+    G.nodes[atom2]["bonds"] += 1
 
 def upgrade_bonds(G, central):
     """
@@ -286,6 +335,20 @@ def upgrade_bonds(G, central):
     """
     neighbors = list(G.neighbors(central))
 
+    if len(G.nodes()) == 3 and len(neighbors) == 2:
+        central_element = G.nodes[central]["element"]
+
+        all_neighbors_match_central = True
+        for neighbor in neighbors:
+            if G.nodes[neighbor]["element"] != central_element:
+                all_neighbors_match_central = False
+                break
+
+        if all_neighbors_match_central:
+            chosen_neighbor = neighbors[0]
+            increase_bond_order(G, central, chosen_neighbor)
+            return
+
     # diatomic case
     if len(neighbors) == 1:
         neighbor = neighbors[0]
@@ -294,13 +357,7 @@ def upgrade_bonds(G, central):
         max_bonds = elements[element]["max_bonds"]
 
         while G[central][neighbor]["order"] < max_bonds:
-            G[central][neighbor]["order"] += 1
-
-            G.nodes[central]["lone_electrons"] -= 1
-            G.nodes[neighbor]["lone_electrons"] -= 1
-
-            G.nodes[central]["bonds"] += 1
-            G.nodes[neighbor]["bonds"] += 1
+            increase_bond_order(G, central, neighbor)
 
         return
 
@@ -313,7 +370,7 @@ def upgrade_bonds(G, central):
             element = G.nodes[neighbor]["element"]
             current_bonds = G.nodes[neighbor]["bonds"]
 
-            if element in ["H", "F", "Cl", "Br", "I"]:
+            if element in terminal_atoms:
                 continue
 
             max_bonds = elements[element]["max_bonds"]
@@ -326,30 +383,22 @@ def upgrade_bonds(G, central):
         if best_neighbor is None:
             break
 
-        G[central][best_neighbor]["order"] += 1
-
-        G.nodes[central]["lone_electrons"] -= 1
-        G.nodes[best_neighbor]["lone_electrons"] -= 1
-
-        G.nodes[central]["bonds"] += 1
-        G.nodes[best_neighbor]["bonds"] += 1
+        increase_bond_order(G, central, best_neighbor)
 
 def generate_positions(G, central):
     """
     Generate 2D positions for each atom by placing surrounding atoms
-    evenly around the central atom in a circular layout.
+    around the central atom.
 
     Args:
         G (networkx.Graph): Graph representing the molecule
         central (str): The central atom
-        bond_length (float): Distance from central atom to neighbors
 
     Returns:
         dict: Dictionary mapping each node to its 2D position
     """
-    positions = {}
-    positions[central] = np.array([0.0, 0.0])
-    
+    positions = {central: np.array([0.0, 0.0])}
+
     neighbors = list(G.neighbors(central))
     n = len(neighbors)
     lone_pairs = G.nodes[central].get("lone_pairs", 0)
@@ -360,7 +409,7 @@ def generate_positions(G, central):
             positions[neighbors[1]] = np.array([1.0, 0.0])
             return positions
 
-        elif lone_pairs >= 1:
+        if lone_pairs >= 1:
             bond_angle = np.radians(104.5)
             half = bond_angle / 2
 
@@ -368,10 +417,9 @@ def generate_positions(G, central):
             positions[neighbors[1]] = np.array([np.cos(half), -np.sin(half)])
             return positions
 
-        else:
-            positions[neighbors[0]] = np.array([-1.0, 0.0])
-            positions[neighbors[1]] = np.array([1.0, 0.0])
-            return positions
+        positions[neighbors[0]] = np.array([-1.0, 0.0])
+        positions[neighbors[1]] = np.array([1.0, 0.0])
+        return positions
 
     if n == 0:
         return positions
@@ -398,12 +446,96 @@ def angle_diff(a, b):
     """
     return abs((a - b + np.pi) % (2 * np.pi) - np.pi)
 
+def to_canvas_coords(x, y, scale, canvas_offset_x, canvas_offset_y):
+    """
+    Convert molecule coordinates to SVG canvas coordinates.
+
+    Args:
+        x (float): X position in molecule space
+        y (float): Y position in molecule space
+        scale (float): Scale factor for drawing
+        canvas_offset_x (float): Horizontal canvas offset
+        canvas_offset_y (float): Vertical canvas offset
+
+    Returns:
+        tuple: (canvas_x, canvas_y)
+    """
+    canvas_x = x * scale + canvas_offset_x
+    canvas_y = -y * scale + canvas_offset_y
+    return canvas_x, canvas_y
+
+def get_lone_pair_angles(bond_angles, lone_pairs, neighbor_count):
+    """
+    Determine the angles where lone pairs should be drawn.
+
+    Args:
+        bond_angles (list): List of bond angles in radians
+        lone_pairs (int): Number of lone pairs
+        neighbor_count (int): Number of bonded neighbors
+
+    Returns:
+        list: Angles for lone pair placement
+    """
+    if lone_pairs <= 0:
+        return []
+
+    if neighbor_count == 2:
+        sin_sum = 0
+        cos_sum = 0
+
+        for angle in bond_angles:
+            sin_sum += np.sin(angle)
+            cos_sum += np.cos(angle)
+        avg_bond_angle = np.arctan2(sin_sum, cos_sum)
+
+        opposite_angle = avg_bond_angle + np.pi
+
+        if lone_pairs == 1:
+            return [opposite_angle]
+
+        if lone_pairs == 2:
+            spread = np.radians(50)
+            left_angle = opposite_angle - spread / 2
+            right_angle = opposite_angle + spread / 2
+            return [left_angle, right_angle]
+
+        if lone_pairs == 3:
+            upper_angle = opposite_angle
+            left_angle = opposite_angle + (2 * np.pi / 3)
+            right_angle = opposite_angle - (2 * np.pi / 3)
+            return [upper_angle, left_angle, right_angle]
+
+        return []
+
+    primary_angles = [i * (np.pi / 2) for i in range(4)]
+    secondary_angles = [np.pi / 4 + i * (np.pi / 2) for i in range(4)]
+    all_angles = primary_angles + secondary_angles
+
+    pair_angles = []
+    for angle in all_angles:
+        far_from_all_bonds = True
+        for bond_angle in bond_angles:
+            if angle_diff(angle, bond_angle) <= 0.5:
+                far_from_all_bonds = False
+                break
+
+        if far_from_all_bonds:
+            pair_angles.append(angle)
+
+    return pair_angles
+
 def draw_molecule(G, positions):
     """
     Render the molecule as an SVG image, including atoms, bonds,
     and lone pairs positioned symmetrically around each atom.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+        positions (dict): Dictionary mapping each node to its 2D position
+
+    Returns:
+        None
     """
-    position = {node: tuple(positions[node]) for node in positions}
     dwg = svgwrite.Drawing("static/molecule.svg", size=("400px", "400px"))
 
     scale = 150
@@ -412,8 +544,8 @@ def draw_molecule(G, positions):
 
     for atom1, atom2, bond_data in G.edges(data=True):
         order = bond_data.get("order", 1)
-        x1, y1 = position[atom1]
-        x2, y2 = position[atom2]
+        x1, y1 = positions[atom1]
+        x2, y2 = positions[atom2]
 
         direction_x = x2 - x1
         direction_y = y2 - y1
@@ -424,84 +556,73 @@ def draw_molecule(G, positions):
 
         for i in range(order):
             offset = (i - (order - 1) / 2) * 10
+
+            start_x, start_y = to_canvas_coords(
+                x1 + (perp_x * offset) / scale,
+                y1 - (perp_y * offset) / scale,
+                scale,
+                canvas_offset_x,
+                canvas_offset_y
+            )
+            end_x, end_y = to_canvas_coords(
+                x2 + (perp_x * offset) / scale,
+                y2 - (perp_y * offset) / scale,
+                scale,
+                canvas_offset_x,
+                canvas_offset_y
+            )
+
             dwg.add(dwg.line(
-                start=(
-                    x1 * scale + canvas_offset_x + perp_x * offset,
-                    -y1 * scale + canvas_offset_y + perp_y * offset
-                ),
-                end=(
-                    x2 * scale + canvas_offset_x + perp_x * offset,
-                    -y2 * scale + canvas_offset_y + perp_y * offset
-                ),
+                start=(start_x, start_y),
+                end=(end_x, end_y),
                 stroke="white"
             ))
 
     for node in G.nodes():
-        x, y = position[node]
+        x, y = positions[node]
         neighbors = list(G.neighbors(node))
-        n = len(neighbors)
 
         bond_angles = []
         for neighbor in neighbors:
-            nb_x, nb_y = position[neighbor]
-            angle = np.arctan2(nb_y - y, nb_x - x)
+            neighbor_x, neighbor_y = positions[neighbor]
+            angle = np.arctan2(neighbor_y - y, neighbor_x - x)
             bond_angles.append(angle)
-        
+
+        center_x, center_y = to_canvas_coords(
+            x, y, scale, canvas_offset_x, canvas_offset_y
+        )
+
         dwg.add(dwg.circle(
-            center=(x * scale + canvas_offset_x, -y * scale + canvas_offset_y),
+            center=(center_x, center_y),
             r=20,
             fill="white",
             stroke="black"
         ))
 
         lone_pairs = G.nodes[node].get("lone_pairs", 0)
-        if lone_pairs > 0:
-            if n == 2:
-                avg_bond_angle = np.arctan2(
-                    np.sum([np.sin(a) for a in bond_angles]),
-                    np.sum([np.cos(a) for a in bond_angles])
-                )
-                opposite_angle = avg_bond_angle + np.pi
+        pair_angles = get_lone_pair_angles(bond_angles, lone_pairs, len(neighbors))
 
-                if lone_pairs == 1:
-                    pair_angles = [opposite_angle]
+        for i in range(min(lone_pairs, len(pair_angles))):
+            angle = pair_angles[i]
+            distance = 32
+            dot_separation = 4
 
-                elif lone_pairs == 2:
-                    spread = np.radians(50)
-                    pair_angles = [opposite_angle - spread / 2, opposite_angle + spread / 2]
+            offset_x = -np.sin(angle) * dot_separation
+            offset_y = np.cos(angle) * dot_separation
 
-                elif lone_pairs == 3:
-                    pair_angles = [opposite_angle, opposite_angle + (2 * np.pi / 3), opposite_angle - (2 * np.pi / 3)]
+            for dot_direction in [-1, 1]:
+                dot_x = x * scale + canvas_offset_x + distance * np.cos(angle) + offset_x * dot_direction
+                dot_y = -y * scale + canvas_offset_y - distance * np.sin(angle) - offset_y * dot_direction
 
-                else:
-                    pair_angles = []
-            else:
-                primary_angles = [i * (np.pi / 2) for i in range(4)]
-                secondary_angles = [np.pi/4 + i * (np.pi / 2) for i in range(4)]
-                all_angles = primary_angles + secondary_angles
-
-                pair_angles = [a for a in all_angles if all(angle_diff(a, b) > 0.5 for b in bond_angles)]
-
-            for i in range(min(lone_pairs, len(pair_angles))):
-                angle = pair_angles[i]
-                dist = 32
-                dot_sep = 4
-                
-                px, py = -np.sin(angle) * dot_sep, np.cos(angle) * dot_sep
-
-                for offset in [-1, 1]:
-                    dwg.add(dwg.circle(
-                        center=(
-                            x * scale + canvas_offset_x + dist * np.cos(angle) + px * offset,
-                            -y * scale + canvas_offset_y - dist * np.sin(angle) - py * offset
-                        ),
-                        r=2,
-                        fill="white"
-                    ))
+                dwg.add(dwg.circle(
+                    center=(dot_x, dot_y),
+                    r=2,
+                    fill="white"
+                ))
 
         dwg.add(dwg.text(
             G.nodes[node]["element"],
-            insert=(x * scale + canvas_offset_x - 8, -y * scale + canvas_offset_y + 5),
+            insert=(center_x - 8, center_y + 5),
             fill="black",
             font_size="16px",
             font_family="Arial"
@@ -515,8 +636,7 @@ def main(formula):
     valid, message = validate_molecule(parsed)
 
     if not valid:
-        print(message)
-        exit()
+        return message, None, None
 
     print("Valence electrons per atom:")
 

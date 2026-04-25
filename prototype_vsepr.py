@@ -2,6 +2,8 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, RWMol, Conformer
 import py3Dmol
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import json
@@ -551,7 +553,11 @@ def expanded_vsepr_structures(structure):
     return []
 
 def main(formula):
+
     molecule, central, networkxGraph = prototype_lewis_structure.main(formula)
+
+    if central == None:
+        return molecule
 
     bonds = findBonds(networkxGraph)
     structureVSEPR, electronVSEPR, hybridization, lone_pairs = findVSEPR(networkxGraph, central)
