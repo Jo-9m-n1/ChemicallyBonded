@@ -71,66 +71,57 @@ def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D,
                        electronGeometry, molecule, hybridization, lone_pairs):
     items = ""
     stringVSEPR = ''.join(char for char in structure3D if not char.isdigit())
+    
     for symbol in sorted(atom_symbols):
         color = ELEMENT_COLORS.get(symbol, "#EB1388")
-        if expandedVSEPR:
-            if symbol == "F":
-                color = "#D9A420"
-        border = "border:2px solid #000000;"
-
+        if expandedVSEPR and symbol == "F":
+            color = "#D9A420"
+        
         items += f'''
-        <div>
-            <span style="
-                display:inline-block;
-                width:12px;
-                height:12px;
-                border-radius:100%;
-                background:{color};
-                {border}
-                margin-right:6px;
-            "></span>{symbol}
+        <div style="display:flex; align-items:center; margin-bottom:2px;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; 
+                         background:{color}; border:0.5px solid #000; margin-right:6px;"></span>
+            <span style="font-size:9px; font-family:sans-serif;">{symbol}</span>
         </div>
         '''
+        
     if lone_pairs:
         items += f'''
-        <div>
-            <span style="
-                display:inline-block;
-                width:12px;
-                height:12px;
-                border-radius:50%;
-                background:blue;
-                border:0.5px solid #000000;
-                margin-right:6px;
-            "></span>Lone pairs
+        <div style="display:flex; align-items:center; margin-bottom:2px;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%;
+            background:blue; border:0.5px solid #000; margin-right:6px;"></span>
+            <span style="font-size:9px; font-family:sans-serif;">Lone pairs</span>
         </div>
         '''
 
     legend_html = f'''
     <div style="
-        position:absolute;
-        width: 96%;
-        background: rgba(112, 165, 225, 0.25);
-        padding:6px;
-        border:none;
-        border-radius:25px;
-        z-index:9999;
-        display: flex;
-        font-size:15px;
-        gap: 2px;
+        position: absolute; 
+        bottom: 12px; 
+        left: 10px;
+        width: 160px; 
+        background: rgba(255, 255, 255, 0.9);
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        box-sizing: border-box;
+        line-height: 1;
     ">
-        <img src="/static/molecule_chart.png" alt="Distribution Chart" style="height: 80px; border-radius: 10px;">
+        <div style="font-size: 15px; font-weight: bold; margin-bottom: 6px; color: #000;">{molecule}</div>
+        
+        <div style="font-size: 9px; color: #444; margin-bottom: 8px;">
+            <b>E-Geom:</b> {electronGeometry}<br>
+            <b>M-Geom:</b> {stringVSEPR}<br>
+            <b>Hybrid:</b> {hybridization}
+        </div>
 
-        <ul style="font-size: 8px; color: black;">
-            <li><b>Molecule Name:</b> {molecule}</li>
-            <li><b>Electron-Pair Geometry:</b> {electronGeometry}</li>
-            <li><b>Molecular Geometry:</b> {stringVSEPR}</li>
-            <li><b>Hybridization:</b> {hybridization}</li>
-            <li style="display:flex; gap: 3px;"> {items}</li>
-        </ul>
+        <div style="border-top: 1px solid #eee; padding-top: 8px;">
+            {items}
+        </div>
     </div>
     '''
-
 
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
@@ -147,7 +138,6 @@ def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D,
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(html)
-
 
 def findBonds(G):
     bonds = []
@@ -600,7 +590,7 @@ def main(formula):
 
     generatingLonePairs(view, structureVSEPR, mol, central)
 
-    view.zoomTo({"sphere": {"scale": 0.5}}, 2000, True)
+    view.zoomTo({"sphere": {"scale": 0.7}}, 2000, True)
 
     output_file = "static/html_visualisation.html"
     with open(output_file, "w", encoding="utf-8") as f:

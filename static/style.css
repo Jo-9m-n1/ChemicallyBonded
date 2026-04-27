@@ -75,7 +75,8 @@ body {
 }
 
 #left-box::-webkit-scrollbar,
-#chat::-webkit-scrollbar {
+#chat::-webkit-scrollbar, 
+.chemistry-card::-webkit-scrollbar {
     display: none;
 }
 
