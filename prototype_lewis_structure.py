@@ -575,7 +575,7 @@ def draw_molecule(G, positions):
             dwg.add(dwg.line(
                 start=(start_x, start_y),
                 end=(end_x, end_y),
-                stroke="white"
+                stroke="black"
             ))
 
     for node in G.nodes():
@@ -617,7 +617,7 @@ def draw_molecule(G, positions):
                 dwg.add(dwg.circle(
                     center=(dot_x, dot_y),
                     r=2,
-                    fill="white"
+                    fill="black"
                 ))
 
         dwg.add(dwg.text(
@@ -631,6 +631,7 @@ def draw_molecule(G, positions):
     dwg.save()
 
 def main(formula):
+    print(formula)
     parsed = parse_formula(formula)
 
     valid, message = validate_molecule(parsed)
