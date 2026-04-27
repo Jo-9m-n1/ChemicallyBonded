@@ -105,7 +105,7 @@ def chat():
             response = prototype_vsepr.main(formula)
             if response is None:
                 reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
-                LewisStructure = "static/molecule.svg"
+                LewisStructure = f"static/generated/molecule_{formula}.svg"
             else:
                 reply = response
 

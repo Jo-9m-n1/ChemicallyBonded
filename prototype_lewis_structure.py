@@ -3,6 +3,8 @@ import numpy as np
 import svgwrite
 import json
 
+from pathlib import Path
+
 with open("static/periodic_table.json") as file:
     elements = json.load(file)
 
@@ -65,7 +67,7 @@ def validate_molecule(chemDict):
 
     for atom in chemDict:
         if atom not in elements:
-            return False, f"{atom} is not a valid atom symbol in my knowledge! Could you please try with another molecule?"
+            return False, f"{atom} is not a valid atom symbol in this program."
 
         atom_type = elements[atom]["type"]
 
@@ -75,14 +77,14 @@ def validate_molecule(chemDict):
             has_nonmetal = True
 
     if has_metal and has_nonmetal:
-        return False, "I may have a PhD in chemistry but I do not know how to draw ionic compounds."
+        return False, "Ionic compounds are not supported."
 
     for atom in chemDict:
         if elements[atom]["max_bonds"] == 0:
             return False, f"{atom} does not form bonds."
 
     if not is_supported_structure(chemDict):
-        return False, "I may have a PhD in chemistry but I only know how to draw single-center molecules up to 7 atoms."
+        return False, "This molecule is not supported (only single-center molecules up to 7 atoms)."
 
     total_bonds_possible = 0
     for atom, count in chemDict.items():
@@ -524,7 +526,7 @@ def get_lone_pair_angles(bond_angles, lone_pairs, neighbor_count):
 
     return pair_angles
 
-def draw_molecule(G, positions):
+def draw_molecule(G, positions, molecule):
     """
     Render the molecule as an SVG image, including atoms, bonds,
     and lone pairs positioned symmetrically around each atom.
@@ -536,7 +538,11 @@ def draw_molecule(G, positions):
     Returns:
         None
     """
-    dwg = svgwrite.Drawing("static/molecule.svg", size=("400px", "400px"))
+    file_path = Path(f"static/generated/molecule_{molecule}.svg")
+    if file_path.is_file():
+        return
+    
+    dwg = svgwrite.Drawing(f"static/generated/molecule_{molecule}.svg", size=("400px", "400px"))
 
     scale = 150
     canvas_offset_x = 200
@@ -631,13 +637,13 @@ def draw_molecule(G, positions):
     dwg.save()
 
 def main(formula):
-    print(formula)
     parsed = parse_formula(formula)
 
     valid, message = validate_molecule(parsed)
 
     if not valid:
-        return message, None, None
+        print(message)
+        return
 
     print("Valence electrons per atom:")
 
@@ -663,5 +669,5 @@ def main(formula):
         
     assign_lone_pairs(G)
     positions = generate_positions(G, central)
-    draw_molecule(G, positions)
+    draw_molecule(G, positions, formula)
     return parsed, central, G
