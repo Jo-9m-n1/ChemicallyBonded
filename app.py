@@ -73,6 +73,15 @@ def chat():
     LewisStructure = None
     VSEPRModel = None
 
+    past_messages = Message.query.filter_by(conversation_id=conv_id).order_by(Message.id.asc()).all()
+
+    history = []
+    for msg in past_messages:
+        role = "user" if msg.is_user else "model"
+        history.append({"role": role, "parts": [{"text": msg.text}]})
+
+    history.append({"role": "user", "parts": [{"text": user_message}]})
+
     try:
         with open("prompt.txt", "r", encoding="utf-8") as f:
             system_prompt = f.read()
@@ -80,7 +89,7 @@ def chat():
         system_prompt_with_verbosity = f"{system_prompt}\n\nVERBOSITY GUIDELINE: {selected_constraint}"
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=user_message,
+            contents=history,
             config={
                 "system_instruction": system_prompt_with_verbosity
             }
