@@ -1,125 +1,105 @@
 from rdkit import Chem
-from rdkit.Chem import AllChem, RWMol, Conformer
+from rdkit.Chem import AllChem, RWMol, Conformer, rdMolTransforms
 import py3Dmol
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import json
 import math
 
 import prototype_lewis_structure
-# (bonding_pairs, lone_pairs): geometry
+
+with open("static/vsepr.json", "r") as file:
+    data = json.load(file)
+
 VSEPR_TABLE = {
-    (2, 0): "Linear2",  # done
-    (3, 0): "Trigonal planar",  # done
-    (2, 1): "Bent1",  # done
-    (4, 0): "Tetrahedral",  # done
-    (3, 1): "Trigonal pyramidal",  # done
-    (2, 2): "Bent2",  # done
-    (5, 0): "Trigonal bipyramidal",  # done
-    (4, 1): "Seesaw", # done
-    (3, 2): "T-shaped2", # done
-    (2, 3): "Linear5", # done
-    (6, 0): "Octahedral", # done
-    (5, 1): "Square pyramidal", # done
-    (4, 2): "Square planar", # done
-    (3, 3): "T-shaped3", # done
-    (2, 4): "Linear6" # done
+    tuple(map(int, key.split(","))): value
+    for key, value in data["VSEPR_TABLE"].items()
 }
 
 ELECTRON_PAIR_TABLE = {
-    2: {"geometry": "Linear", "hybridization": "sp"},
-    3: {"geometry": "Trigonal planar", "hybridization": "sp2"},
-    4: {"geometry": "Tetrahedral", "hybridization": "sp3"},
-    5: {"geometry": "Trigonal bipyramidal", "hybridization": "sp3d"},
-    6: {"geometry": "Octahedral", "hybridization": "sp3d2"}
+    key: value
+    for key, value in data["ELECTRON_PAIR_TABLE"].items()
 }
 
-# added: simple colors for legend
-ELEMENT_COLORS = {
-    "H": "#FFFFFF",
-    "C": "#909090",
-    "N": "#3050F8",
-    "O": "#FF0D0D",
-    "F": "#D9A420",
-    "Cl": "#1FF01F",
-    "Br": "#A62929",
-    "I": "#940094",
-    "S": "#fac431",
-    "P": "#FF8000",
-    "B": "#1FF01F",
-    "Si": "#F0C8A0",
-    "Xe": "#429EB0",
-    "As": "#EB1388",
-}
+ELEMENT_COLORS = data["ELEMENT_COLORS"]
 
-HIGH_DOMAIN_STRUCTURES = {
-    "Trigonal bipyramidal",
-    "Seesaw",
-    "T-shaped2",
-    "Linear5",
-    "Octahedral",
-    "Square pyramidal",
-    "Square planar",
-    "T-shaped3",
-    "Linear6"
-}
+HIGH_DOMAIN_STRUCTURES = set(data["HIGH_DOMAIN_STRUCTURES"])
 
 def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D, 
                        electronGeometry, molecule, hybridization, lone_pairs):
     items = ""
     stringVSEPR = ''.join(char for char in structure3D if not char.isdigit())
-    
     for symbol in sorted(atom_symbols):
         color = ELEMENT_COLORS.get(symbol, "#EB1388")
-        if expandedVSEPR and symbol == "F":
-            color = "#D9A420"
-        
+        if expandedVSEPR:
+            if symbol == "F":
+                color = "#D9A420"
+        border = "border:2px solid #000000;"
+
         items += f'''
-        <div style="display:flex; align-items:center; margin-bottom:2px;">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; 
-                         background:{color}; border:0.5px solid #000; margin-right:6px;"></span>
-            <span style="font-size:9px; font-family:sans-serif;">{symbol}</span>
+        <div>
+            <span style="
+                display:inline-block;
+                width:12px;
+                height:12px;
+                border-radius:50%;
+                background:{color};
+                {border}
+                margin-right:6px;
+            "></span>{symbol}
         </div>
         '''
-        
     if lone_pairs:
         items += f'''
-        <div style="display:flex; align-items:center; margin-bottom:2px;">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%;
-            background:blue; border:0.5px solid #000; margin-right:6px;"></span>
-            <span style="font-size:9px; font-family:sans-serif;">Lone pairs</span>
+        <div>
+            <span style="
+                display:inline-block;
+                width:12px;
+                height:12px;
+                border-radius:50%;
+                background:blue;
+                border:2px solid #000000;
+                margin-right:6px;
+            "></span>Lone pairs
         </div>
         '''
-
     legend_html = f'''
     <div style="
-        position: absolute; 
-        bottom: 12px; 
-        left: 10px;
-        width: 160px; 
-        background: rgba(255, 255, 255, 0.9);
-        padding: 12px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        z-index: 9999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-        box-sizing: border-box;
-        line-height: 1;
+        position:absolute;
+        top:45px;
+        right:45px;
+        background:#efedff;
+        padding:30px;
+        border:2px solid #000000;
+        border-radius:25px;
+        z-index:9999;
+        font-family:Trebuchet MS, sans-serif;
+        font-size:40px;
     ">
-        <div style="font-size: 15px; font-weight: bold; margin-bottom: 6px; color: #000;">{molecule}</div>
-        
-        <div style="font-size: 9px; color: #444; margin-bottom: 8px;">
-            <b>E-Geom:</b> {electronGeometry}<br>
-            <b>M-Geom:</b> {stringVSEPR}<br>
-            <b>Hybrid:</b> {hybridization}
-        </div>
-
-        <div style="border-top: 1px solid #eee; padding-top: 8px;">
-            {items}
-        </div>
+        <b>Legend:</b>
+        {items}
+    </div>
+    <div style="
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 10px;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+    ">
+        <ul style="margin: 0; font-size: 20px; font-family:Trebuchet MS, sans-serif; color: black;">
+            <li><b>Molecule Name:</b> {molecule}</li>
+            <li><b>Electron-Pair Geometry:</b> {electronGeometry}</li>
+            <li><b>Molecular Geometry:</b> {stringVSEPR}</li>
+            <li><b>Hybridization:</b> {hybridization}</li>
+        </ul>
     </div>
     '''
 
@@ -138,6 +118,7 @@ def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D,
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(html)
+
 
 def findBonds(G):
     bonds = []
@@ -167,7 +148,7 @@ def findVSEPR(G, central):
             structureVSEPR = values
 
     for key, values in ELECTRON_PAIR_TABLE.items():
-        if total_bonds == key:
+        if total_bonds == int(key):
             electronGeometry = values["geometry"]
             hybridization = values["hybridization"]
 
@@ -201,7 +182,17 @@ def showPieChart(bonding_pairs, lone_pairs):
     return
 
 
-def generatingLonePairs(view, structure, mol, central):
+def lonePairPositions(view, positions):
+    view.addSphere({
+        'center': positions,
+        'radius': 0.3,
+        'color': 'blue',
+        'opacity': '0.90'
+    })
+    return 
+
+
+def generatingLonePairs(view, structure, mol, central, lone_pairs):
     if mol.GetNumConformers() == 0:
         try:
             AllChem.EmbedMolecule(mol)
@@ -212,109 +203,51 @@ def generatingLonePairs(view, structure, mol, central):
 
     conf = mol.GetConformer()
 
-    positions_central = []
+    c_pos = [] # positions of central atom to put the lone pairs
 
     for atom in mol.GetAtoms():
         idx = atom.GetIdx()
         symbol = atom.GetSymbol()
         pos = conf.GetAtomPosition(idx)
         if symbol == central:
-            positions_central.append(pos.x)
-            positions_central.append(pos.y)
-            positions_central.append(pos.z)
+            c_pos.append(pos.x)
+            c_pos.append(pos.y)
+            c_pos.append(pos.z)
     
-    trigonal_bipyramidal_positions = [
+    angle = rdMolTransforms.GetAngleDeg(conf, 0, 1, 2)
+    print(f"Angle: {angle:.2f}°")
+
+    trigonal_bipyramidal_pos = [
         {'x': -0.5 * (math.sqrt(3) / 2.0), 'y': -0.5/2, 'z': 0.0},
         {'x': 0, 'y': 0.5, 'z': 0.0},
         {'x': 0.5 * (math.sqrt(3) / 2.0), 'y': -0.5/2, 'z': 0.0},
     ]
 
+    octahedral_pos = [
+        {'x': 0.0, 'y': 0.0, 'z': 0.5},
+        {'x': 0.0, 'y': 0.0, 'z': -0.5},
+        {'x': 0.0, 'y': -0.5, 'z': 0.0},
+        {'x': 0.0, 'y': 0.5, 'z': 0.0},
+    ]
+
     if structure == "Bent1":
-        view.addSphere({
-            'center': {'x': positions_central[0], 'y': positions_central[1] + 0.5, 'z': positions_central[2]},
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
+        lonePairPositions(view, 
+                          {'x': c_pos[0], 'y': c_pos[1] + 0.5, 'z': c_pos[2]})
     elif structure == "Trigonal pyramidal":
-        view.addSphere({
-            'center': {'x': positions_central[0], 'y': positions_central[1], 'z': positions_central[2] + 0.55},
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
+        lonePairPositions(view, 
+                          {'x': c_pos[0], 'y': c_pos[1], 'z': c_pos[2] + 0.55})
     elif structure == "Bent2":
-        view.addSphere({
-            'center': {'x': positions_central[0], 'y': positions_central[1] + 0.35, 'z': positions_central[2] + 0.35},
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-        view.addSphere({
-            'center': {'x': positions_central[0], 'y': positions_central[1] + 0.35, 'z': positions_central[2] - 0.35},
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-    elif structure == "Seesaw":
-        view.addSphere({
-            'center': trigonal_bipyramidal_positions[0],
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-    elif structure == "T-shaped2":
-        view.addSphere({
-            'center': trigonal_bipyramidal_positions[0],
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-        view.addSphere({
-            'center': trigonal_bipyramidal_positions[1],
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-    elif structure == "Linear5":
-        view.addSphere({
-            'center': trigonal_bipyramidal_positions[0],
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-        view.addSphere({
-            'center': trigonal_bipyramidal_positions[1],
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-        view.addSphere({
-            'center': trigonal_bipyramidal_positions[2],
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-    elif structure == "Square pyramidal":
-        view.addSphere({
-            'center': {'x': 0, 'y': 0, 'z': 0.5},
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-    elif structure == "Square Planar":
-        view.addSphere({
-            'center': {'x': 0, 'y': 0, 'z': 0.5},
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
-        view.addSphere({
-            'center': {'x': 0, 'y': 0, 'z': -0.5},
-            'radius': 0.3,
-            'color': 'blue',
-            'opacity': '0.90'
-        })
+        for i in range(2):
+            lonePairPositions(view, 
+                              {'x': c_pos[0], 'y': c_pos[1] + 0.35, 'z': c_pos[2] + 0.35 * (-1)**i})
+    elif structure in ("Seesaw", "T-shaped2", "Linear5"):
+        for i in range(lone_pairs):
+            lonePairPositions(view,
+                              trigonal_bipyramidal_pos[i])    
+    elif structure in ("Square pyramidal", "Square planar", "T-shaped3", "Linear6"):
+        for i in range(lone_pairs):
+            lonePairPositions(view,
+                              octahedral_pos[i])
     return
 
 
@@ -457,7 +390,7 @@ SeO2, XeO4 doesn't work properly for mines.
 def expanded_vsepr_structures(structure):
     d = 1.5
     sqrt3_over_2 = math.sqrt(3) / 2.0
-    # Standard octahedral vertices: (+-d, 0, 0), (0, +-d, 0), (0, 0, +-d)
+    # standard octahedral vertices: (+-d, 0, 0), (0, +-d, 0), (0, 0, +-d)
     octahedral = np.array([
         [0, 0, 0],
         [d, 0, 0], # right
@@ -529,25 +462,29 @@ def expanded_vsepr_structures(structure):
     if structure == "T-shaped3":
         return [
             octahedral[0],
-            octahedral[4],
-            octahedral[5],
-            octahedral[6],
+            octahedral[1],
+            octahedral[2],
+            octahedral[3],
         ]
     
     if structure == "Linear6":
         return [
             octahedral[0],
-            octahedral[5],
-            octahedral[6],
+            octahedral[1],
+            octahedral[2],
         ]
     return []
 
+
 def main(formula):
-
+    try:
+        with open(f"static/generated/vsepr_{formula}.html", "r") as f:
+            content = f.read()
+            print("found old")
+            return
+    except FileNotFoundError:
+        pass
     molecule, central, networkxGraph = prototype_lewis_structure.main(formula)
-
-    if central == None:
-        return molecule
 
     bonds = findBonds(networkxGraph)
     structureVSEPR, electronVSEPR, hybridization, lone_pairs = findVSEPR(networkxGraph, central)
@@ -588,11 +525,11 @@ def main(formula):
     view.addModel(mol_block, "mol")
     view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
 
-    generatingLonePairs(view, structureVSEPR, mol, central)
+    generatingLonePairs(view, structureVSEPR, mol, central, lone_pairs)
 
-    view.zoomTo({"sphere": {"scale": 0.7}}, 2000, True)
+    view.zoomTo({"sphere": {"scale": 0.5}}, 2000, True)
 
-    output_file = "static/html_visualisation.html"
+    output_file = f"static/generated/vsepr_{formula}.html"
     with open(output_file, "w", encoding="utf-8") as f:
         view.write_html(f, fullpage=True)
 
@@ -600,3 +537,7 @@ def main(formula):
     atom_symbols = {atom.GetSymbol() for atom in mol.GetAtoms()}
     add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structureVSEPR, 
                        electronVSEPR, formula, hybridization, lone_pairs)
+
+
+if __name__ == "__main__":
+    main("CO2")

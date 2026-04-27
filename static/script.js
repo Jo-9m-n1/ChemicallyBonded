@@ -54,7 +54,7 @@ function createChemistryCard(vsepr, lewis) {
     
     container.innerHTML = `
         <div class="viewer-container">
-            ${vsepr ? `<iframe src="/static/html_visualisation.html" class="mol-viewer"></iframe>` : ''}
+            ${vsepr ? `<iframe src="/${vsepr}" class="mol-viewer"></iframe>` : ''}
             ${lewis ? `<div class="lewis-wrap"><img src="/static/molecule.svg" alt="Lewis structure" class="lewis-structure"></div>` : ''}
         </div>
     `;

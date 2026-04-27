@@ -114,7 +114,7 @@ def chat():
             response = prototype_vsepr.main(formula)
             if response is None:
                 reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
-                VSEPRModel = "static/html_visualisation.html"
+                VSEPRModel = f"static/generated/vsepr_{formula}.html"
             else:
                 reply = response
 
