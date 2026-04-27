@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import re
 import prototype_vsepr
+import time
 
 load_dotenv()
 
@@ -51,6 +52,8 @@ def chat():
         "He's officially 'missing' after his wife went through his browser history. Try again later.",
         "You are invited to his funeral."
     ]
+
+    start = time.perf_counter()
 
     data = request.json
     user_message = data.get("message")
@@ -129,11 +132,13 @@ def chat():
             )
         )
         db.session.commit()
-
+        end = time.perf_counter()
+        
         return jsonify({
             "reply": reply,
             "LewisStructure": LewisStructure,
             "VSEPR": VSEPRModel,
+            "time": f"{end - start:.2f}"
         })
 
     except Exception as e:
@@ -149,7 +154,8 @@ def chat():
         session['story'] = min(current_index + 1, len(excuses) - 1)
 
         print(f"Error: {e}")
-        return jsonify({"reply": current_msg}), 500
+        end = time.perf_counter()
+        return jsonify({"reply": current_msg, "time": f"{end - start:.2f}"}), 500
 
 @app.route('/get_conversations')
 def get_conversations():

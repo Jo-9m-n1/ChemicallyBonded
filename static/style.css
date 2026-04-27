@@ -123,8 +123,7 @@ h3 {
     scrollbar-width: none;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
 }
 
 #history-list::-webkit-scrollbar, 
@@ -160,6 +159,7 @@ h3 {
     color: white;
     border-bottom-right-radius: 6px;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    margin: 10px;
 }
 
 .messages--bot {
