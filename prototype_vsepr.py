@@ -30,76 +30,55 @@ def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D,
                        electronGeometry, molecule, hybridization, lone_pairs):
     items = ""
     stringVSEPR = ''.join(char for char in structure3D if not char.isdigit())
+    
     for symbol in sorted(atom_symbols):
         color = ELEMENT_COLORS.get(symbol, "#EB1388")
-        if expandedVSEPR:
-            if symbol == "F":
-                color = "#D9A420"
-        border = "border:2px solid #000000;"
-
+        if expandedVSEPR and symbol == "F":
+            color = "#D9A420"
+        
         items += f'''
-        <div>
-            <span style="
-                display:inline-block;
-                width:12px;
-                height:12px;
-                border-radius:50%;
-                background:{color};
-                {border}
-                margin-right:6px;
-            "></span>{symbol}
+        <div style="display:flex; align-items:center; margin-bottom:2px;">
+            <span style="display:inline-block; width:9px; height:9px; border-radius:50%; 
+                         background:{color}; border:0.5px solid #000; margin-right:6px;"></span>
+            <span style="font-size:10px; font-family:sans-serif;">{symbol}</span>
         </div>
         '''
+        
     if lone_pairs:
         items += f'''
-        <div>
-            <span style="
-                display:inline-block;
-                width:12px;
-                height:12px;
-                border-radius:50%;
-                background:blue;
-                border:2px solid #000000;
-                margin-right:6px;
-            "></span>Lone pairs
+        <div style="display:flex; align-items:center; margin-bottom:2px;">
+            <span style="display:inline-block; width:9px; height:9px; border-radius:50%;
+            background:blue; border:0.5px solid #000; margin-right:6px;"></span>
+            <span style="font-size:10px; font-family:sans-serif;">Lone pairs</span>
         </div>
         '''
+
     legend_html = f'''
     <div style="
-        position:absolute;
-        top:45px;
-        right:45px;
-        background:#efedff;
-        padding:30px;
-        border:2px solid #000000;
-        border-radius:25px;
-        z-index:9999;
-        font-family:Trebuchet MS, sans-serif;
-        font-size:40px;
-    ">
-        <b>Legend:</b>
-        {items}
-    </div>
-    <div style="
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
+        position: absolute; 
+        bottom: 10px; 
+        left: 8px;
+        width: 190px; 
+        background: rgba(255, 255, 255, 0.9);
         padding: 10px;
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        box-sizing: border-box;
+        line-height: 1;
     ">
-        <ul style="margin: 0; font-size: 20px; font-family:Trebuchet MS, sans-serif; color: black;">
-            <li><b>Molecule Name:</b> {molecule}</li>
-            <li><b>Electron-Pair Geometry:</b> {electronGeometry}</li>
-            <li><b>Molecular Geometry:</b> {stringVSEPR}</li>
-            <li><b>Hybridization:</b> {hybridization}</li>
-        </ul>
+        <div style="font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #000;">{molecule}</div>
+        
+        <div style="font-size: 11px; color: #444; margin-bottom: 8px;">
+            <b>E-Geom:</b> {electronGeometry}<br>
+            <b>M-Geom:</b> {stringVSEPR}<br>
+            <b>Hybrid:</b> {hybridization}
+        </div>
+
+        <div style="border-top: 0.5px solid #eee; padding-top: 8px;">
+            {items}
+        </div>
     </div>
     '''
 
@@ -158,7 +137,7 @@ def findVSEPR(G, central):
     if not electronGeometry:
         structureVSEPR = "No electron geometry found"
 
-    showPieChart(bonding_pairs, lone_pairs)
+    #showPieChart(bonding_pairs, lone_pairs)
 
     return structureVSEPR, electronGeometry, hybridization, lone_pairs
 
