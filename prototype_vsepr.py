@@ -459,63 +459,72 @@ def main(formula):
     try:
         with open(f"static/generated/vsepr_{formula}.html", "r") as f:
             content = f.read()
-            print("found old")
             return
     except FileNotFoundError:
         pass
     molecule, central, networkxGraph = prototype_lewis_structure.main(formula)
 
-    bonds = findBonds(networkxGraph)
-    structureVSEPR, electronVSEPR, hybridization, lone_pairs = findVSEPR(networkxGraph, central)
-
-    formalChargeDict = {}
-    containsHydrogen = False
-    for key in molecule:
-        if key == "H":
-            containsHydrogen = True
-        formalCharge = findFormalCharges(key, networkxGraph, bonds, central)
-        if formalCharge:
-            formalChargeDict[key] = formalCharge
-
-    smiles, containsHydrogen, expandedVSEPR = findSMILES(structureVSEPR, central, bonds, containsHydrogen, formalChargeDict)
-    print(smiles, structureVSEPR)
-
-    if not expandedVSEPR:
-        mol = Chem.MolFromSmiles(smiles)
-
-        # Add explicit hydrogens
-        if containsHydrogen:
-            mol = Chem.AddHs(mol)
-        
-        try:
-            AllChem.EmbedMolecule(mol)
-            AllChem.UFFOptimizeMolecule(mol)
-        except:
-            print("Failed to parse molecule to SMILES.")
-            return
-    else:
-        mol = smiles
+    if central == None:
+        return molecule
     
-    # Convert molecule to MOL block format
-    mol_block = Chem.MolToMolBlock(mol)
+    try:
 
-    # Send to Py3Dmol viewer
-    view = py3Dmol.view(width=400, height=400)
-    view.addModel(mol_block, "mol")
-    view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
+        bonds = findBonds(networkxGraph)
+        structureVSEPR, electronVSEPR, hybridization, lone_pairs = findVSEPR(networkxGraph, central)
 
-    generatingLonePairs(view, structureVSEPR, mol, central, lone_pairs)
+        formalChargeDict = {}
+        containsHydrogen = False
+        for key in molecule:
+            if key == "H":
+                containsHydrogen = True
+            formalCharge = findFormalCharges(key, networkxGraph, bonds, central)
+            if formalCharge:
+                formalChargeDict[key] = formalCharge
 
-    view.zoomTo({"sphere": {"scale": 0.5}}, 2000, True)
+        smiles, containsHydrogen, expandedVSEPR = findSMILES(structureVSEPR, central, bonds, containsHydrogen, formalChargeDict)
+        print(smiles, structureVSEPR)
 
-    output_file = f"static/generated/vsepr_{formula}.html"
-    with open(output_file, "w", encoding="utf-8") as f:
-        view.write_html(f, fullpage=True)
+        if not expandedVSEPR:
+            mol = Chem.MolFromSmiles(smiles)
 
-    # added: get atoms from molecule and add legend
-    atom_symbols = {atom.GetSymbol() for atom in mol.GetAtoms()}
-    add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structureVSEPR, 
-                       electronVSEPR, formula, hybridization, lone_pairs)
+            # Add explicit hydrogens
+            if containsHydrogen:
+                mol = Chem.AddHs(mol)
+            
+            try:
+                AllChem.EmbedMolecule(mol)
+                AllChem.UFFOptimizeMolecule(mol)
+            except:
+                error_message = "Failed to parse molecule to SMILES."
+                return None, error_message
+        else:
+            mol = smiles
+        
+        # Convert molecule to MOL block format
+        mol_block = Chem.MolToMolBlock(mol)
+
+        # Send to Py3Dmol viewer
+        view = py3Dmol.view(width=400, height=400)
+        view.addModel(mol_block, "mol")
+        view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
+
+        generatingLonePairs(view, structureVSEPR, mol, central, lone_pairs)
+
+        view.zoomTo({"sphere": {"scale": 0.5}}, 2000, True)
+
+        output_file = f"static/generated/vsepr_{formula}.html"
+        with open(output_file, "w", encoding="utf-8") as f:
+            view.write_html(f, fullpage=True)
+
+        # added: get atoms from molecule and add legend
+        atom_symbols = {atom.GetSymbol() for atom in mol.GetAtoms()}
+        add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structureVSEPR, 
+                        electronVSEPR, formula, hybridization, lone_pairs)
+        
+    except:
+        # James!!!! Change this later!!
+        # When there is an error in your function, make sure to return None and then the error message!
+        return None, "This is an error :)"
 
 
 if __name__ == "__main__":

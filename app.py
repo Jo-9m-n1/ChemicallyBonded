@@ -105,21 +105,21 @@ def chat():
 
         if CallLewis:
             formula = CallLewis.group(1)
-            response = prototype_vsepr.main(formula)
-            if response is None:
+            Lewis_Error, VSEPR_Error = prototype_vsepr.main(formula)
+            if Lewis_Error is None:
                 reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
                 LewisStructure = f"static/generated/molecule_{formula}.svg"
             else:
-                reply = response
+                reply = Lewis_Error
 
         if Call3D:
             formula = Call3D.group(1)
-            response = prototype_vsepr.main(formula)
-            if response is None:
+            Lewis_Error, VSEPR_Error = prototype_vsepr.main(formula)
+            if VSEPR_Error is None:
                 reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
                 VSEPRModel = f"static/generated/vsepr_{formula}.html"
             else:
-                reply = response
+                reply = VSEPR_Error
 
         db.session.add(Message(conversation_id=conv.id, is_user=True, text=user_message))
         db.session.add(

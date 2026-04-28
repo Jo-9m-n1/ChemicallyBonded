@@ -67,7 +67,7 @@ def validate_molecule(chemDict):
 
     for atom in chemDict:
         if atom not in elements:
-            return False, f"{atom} is not a valid atom symbol in this program."
+            return False, f"{atom} is not a valid atom symbol in my knowledge! Could you please try with another molecule?"
 
         atom_type = elements[atom]["type"]
 
@@ -77,14 +77,14 @@ def validate_molecule(chemDict):
             has_nonmetal = True
 
     if has_metal and has_nonmetal:
-        return False, "Ionic compounds are not supported."
+        return False, "I may have a PhD in chemistry but I do not know how to draw ionic compounds."
 
     for atom in chemDict:
         if elements[atom]["max_bonds"] == 0:
-            return False, f"{atom} does not form bonds."
+            return False, f"Hmmmmm, {atom} does not form bonds."
 
     if not is_supported_structure(chemDict):
-        return False, "This molecule is not supported (only single-center molecules up to 7 atoms)."
+        return False, "I may have a PhD in chemistry but I only know how to draw single-center molecules up to 7 atoms."
 
     total_bonds_possible = 0
     for atom, count in chemDict.items():
@@ -100,7 +100,7 @@ def validate_molecule(chemDict):
     if not has_expanded_octet_atom:
         minimum_bonds_needed = (total_atoms - 1) * 2
         if total_bonds_possible < minimum_bonds_needed:
-            return False, "Molecule is not chemically valid (insufficient bonding)"
+            return False, "This molecule is chemically invalid (insufficient bonding)... Try again, unless you want discover a new molecule."
 
     return True, "Valid molecule"
 
@@ -642,8 +642,7 @@ def main(formula):
     valid, message = validate_molecule(parsed)
 
     if not valid:
-        print(message)
-        return
+        return message, None, None
 
     print("Valence electrons per atom:")
 
