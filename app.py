@@ -103,23 +103,23 @@ def chat():
         CallLewis = re.search(r"LEWISFUNCTION\((.*?)\)", reply)
         Call3D = re.search(r"VSEPRFUNCTION\((.*?)\)", reply)
 
-        if CallLewis:
-            formula = CallLewis.group(1)
+        if CallLewis or Call3D:
+            formula = CallLewis.group(1) if CallLewis else Call3D.group(1)
             Lewis_Error, VSEPR_Error = prototype_vsepr.main(formula)
-            if Lewis_Error is None:
-                reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
-                LewisStructure = f"static/generated/molecule_{formula}.svg"
-            else:
-                reply = Lewis_Error
 
-        if Call3D:
-            formula = Call3D.group(1)
-            Lewis_Error, VSEPR_Error = prototype_vsepr.main(formula)
-            if VSEPR_Error is None:
-                reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
-                VSEPRModel = f"static/generated/vsepr_{formula}.html"
-            else:
-                reply = VSEPR_Error
+            if CallLewis:
+                if Lewis_Error is None:
+                    reply = re.sub(r"LEWISFUNCTION\(.*?\)", "", reply).strip()
+                    LewisStructure = f"static/generated/molecule_{formula}.svg"
+                else:
+                    reply = Lewis_Error
+
+            if Call3D:
+                if VSEPR_Error is None:
+                    reply = re.sub(r"VSEPRFUNCTION\(.*?\)", "", reply).strip()
+                    VSEPRModel = f"static/generated/vsepr_{formula}.html"
+                else:
+                    reply = VSEPR_Error
 
         db.session.add(Message(conversation_id=conv.id, is_user=True, text=user_message))
         db.session.add(

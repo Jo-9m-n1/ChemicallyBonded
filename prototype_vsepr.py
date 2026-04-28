@@ -465,7 +465,7 @@ def main(formula):
     molecule, central, networkxGraph = prototype_lewis_structure.main(formula)
 
     if central == None:
-        return molecule, None
+        return molecule, molecule
     
     try:
 
