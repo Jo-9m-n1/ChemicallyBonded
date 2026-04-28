@@ -177,8 +177,7 @@ def generatingLonePairs(view, structure, mol, central, lone_pairs):
             AllChem.EmbedMolecule(mol)
             AllChem.UFFOptimizeMolecule(mol)
         except:
-            print("Could not generate 3D coordinates for this molecule.")
-            return
+            return None, "Could not generate 3D coordinates for this molecule."
 
     conf = mol.GetConformer()
 
@@ -466,64 +465,66 @@ def main(formula):
 
     if central == None:
         return molecule, molecule
-    
+
+    bonds = findBonds(networkxGraph)
+    structureVSEPR, electronVSEPR, hybridization, lone_pairs = findVSEPR(networkxGraph, central)
+
+    formalChargeDict = {}
+    containsHydrogen = False
+    for key in molecule:
+        if key == "H":
+            containsHydrogen = True
+        formalCharge = findFormalCharges(key, networkxGraph, bonds, central)
+        if formalCharge:
+            formalChargeDict[key] = formalCharge
     try:
-
-        bonds = findBonds(networkxGraph)
-        structureVSEPR, electronVSEPR, hybridization, lone_pairs = findVSEPR(networkxGraph, central)
-
-        formalChargeDict = {}
-        containsHydrogen = False
-        for key in molecule:
-            if key == "H":
-                containsHydrogen = True
-            formalCharge = findFormalCharges(key, networkxGraph, bonds, central)
-            if formalCharge:
-                formalChargeDict[key] = formalCharge
-
         smiles, containsHydrogen, expandedVSEPR = findSMILES(structureVSEPR, central, bonds, containsHydrogen, formalChargeDict)
-        print(smiles, structureVSEPR)
-
-        if not expandedVSEPR:
-            mol = Chem.MolFromSmiles(smiles)
-
-            # Add explicit hydrogens
-            if containsHydrogen:
-                mol = Chem.AddHs(mol)
-            
-            try:
-                AllChem.EmbedMolecule(mol)
-                AllChem.UFFOptimizeMolecule(mol)
-            except:
-                error_message = "Failed to parse molecule to SMILES."
-                return None, error_message
-        else:
-            mol = smiles
-        
-        # Convert molecule to MOL block format
-        mol_block = Chem.MolToMolBlock(mol)
-
-        # Send to Py3Dmol viewer
-        view = py3Dmol.view(width=400, height=400)
-        view.addModel(mol_block, "mol")
-        view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
-
-        generatingLonePairs(view, structureVSEPR, mol, central, lone_pairs)
-
-        view.zoomTo({"sphere": {"scale": 0.5}}, 2000, True)
-
-        output_file = f"static/generated/vsepr_{formula}.html"
-        with open(output_file, "w", encoding="utf-8") as f:
-            view.write_html(f, fullpage=True)
-
-        # added: get atoms from molecule and add legend
-        atom_symbols = {atom.GetSymbol() for atom in mol.GetAtoms()}
-        add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structureVSEPR, 
-                        electronVSEPR, formula, hybridization, lone_pairs)
-        
-        return None, None
-        
     except:
-        # James!!!! Change this later!!
-        # When there is an error in your function, make sure to return None and then the error message!
-        return None, "This is an error :)"
+        return None, "Even though I have a PhD in chemistry, I cannot generate the correct SMILES for this molecule."
+    print(smiles, structureVSEPR)
+
+    if not expandedVSEPR:
+        mol = Chem.MolFromSmiles(smiles)
+
+        # Add explicit hydrogens
+        if containsHydrogen:
+            mol = Chem.AddHs(mol)
+        
+        try:
+            AllChem.EmbedMolecule(mol)
+            AllChem.UFFOptimizeMolecule(mol)
+        except:
+            error_message = "Even though I have a PhD in chemistry, I cannot " \
+            "generate the correct SMILES for this molecule with 5 surroundings " \
+            "atoms or more."
+            return None, error_message
+    else:
+        mol = smiles
+    
+    # Convert molecule to MOL block format
+    mol_block = Chem.MolToMolBlock(mol)
+
+    # Send to Py3Dmol viewer
+    view = py3Dmol.view(width=400, height=400)
+    view.addModel(mol_block, "mol")
+    view.setStyle({"stick": {}, "sphere": {"scale": 0.3}})
+
+    try:
+        generatingLonePairs(view, structureVSEPR, mol, central, lone_pairs)
+    except:
+        return None, "Even though I have a PhD in chemistry, I cannot generate this molecule's lone pairs."
+    view.zoomTo({"sphere": {"scale": 0.5}}, 2000, True)
+
+    output_file = f"static/generated/vsepr_{formula}.html"
+    with open(output_file, "w", encoding="utf-8") as f:
+        view.write_html(f, fullpage=True)
+
+    # added: get atoms from molecule and add legend
+    atom_symbols = {atom.GetSymbol() for atom in mol.GetAtoms()}
+    add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structureVSEPR, 
+                    electronVSEPR, formula, hybridization, lone_pairs)
+    
+    return None, None
+    # James!!!! Change this later!!
+    # When there is an error in your function, make sure to return None and then the error message!
+    # None, "This is an error :)"
