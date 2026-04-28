@@ -29,12 +29,13 @@ async function sendMessage() {
 
         const data = await res.json();
 
+        const timeDiv = document.createElement('div');
+        timeDiv.style.cssText = "font-size: 0.67em; color: #747474; margin-left: 18px; margin-bottom: 1px; font-family: monospace;";
+        timeDiv.textContent = `Processed in ${data.time || '0.000'}s`;
+        
+        chat.appendChild(timeDiv);
+
         if (data.reply && data.reply.trim().length > 0) {
-            const timeDiv = document.createElement('div');
-            timeDiv.style.cssText = "font-size: 0.67em; color: #747474; margin-left: 18px; margin-bottom: 1px; font-family: monospace;";
-            timeDiv.textContent = `Processed in ${data.time || '0.000'}s`;
-            
-            chat.appendChild(timeDiv);
 
             const botMsg = document.createElement('div');
             botMsg.className = 'messages messages--bot';

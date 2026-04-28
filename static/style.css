@@ -10,6 +10,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    cursor: default;
 }
 
 .app-layout {
@@ -22,7 +23,7 @@ body {
     border: 1px solid #ddd;
     border-radius: 15px;
     padding: 10px;
-    margin: 10px 0;
+    margin-bottom: 10px;
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -167,6 +168,7 @@ h3 {
     align-self: flex-start;
     background: rgba(255, 255, 255, 0.6);
     color: #111827;
+    margin-bottom: 10px;
     border-bottom-left-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
