@@ -459,13 +459,13 @@ def main(formula):
     try:
         with open(f"static/generated/vsepr_{formula}.html", "r") as f:
             content = f.read()
-            return
+            return None, None
     except FileNotFoundError:
         pass
     molecule, central, networkxGraph = prototype_lewis_structure.main(formula)
 
     if central == None:
-        return molecule
+        return molecule, None
     
     try:
 
@@ -521,11 +521,9 @@ def main(formula):
         add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structureVSEPR, 
                         electronVSEPR, formula, hybridization, lone_pairs)
         
+        return None, None
+        
     except:
         # James!!!! Change this later!!
         # When there is an error in your function, make sure to return None and then the error message!
         return None, "This is an error :)"
-
-
-if __name__ == "__main__":
-    main("CO2")
