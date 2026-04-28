@@ -9,7 +9,7 @@ const color3 = document.getElementById('color3');
 async function sendMessage() {
     const message = input.value.trim();
     const verbosityDropdwon = document.getElementById('verbosity-select');
-    const verbosity = verbosityDropdwon ? verbosityDropdwon.value: 'meduim';
+    const verbosity = verbosityDropdwon ? verbosityDropdwon.value: 'medium';
 
     if (!message) return;
 
@@ -17,22 +17,36 @@ async function sendMessage() {
     userMsg.className = 'messages messages--user';
     userMsg.textContent = message;
     chat.appendChild(userMsg);
-    chat.scrollTop = chat.scrollHeight;
+
     input.value = '';
+
+    const typingBubble = document.createElement('div');
+    typingBubble.className = 'messages messages--bot typing-indicator';
+    typingBubble.innerHTML = '<span></span><span></span><span></span>'; 
+    chat.appendChild(typingBubble);
+    chat.scrollTop = chat.scrollHeight;
 
     try {
         const res = await fetch('/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, conversation_id: currentConversationId, verbosity: verbosity })
+            body: JSON.stringify({ 
+                message, 
+                conversation_id: currentConversationId, 
+                verbosity: verbosity 
+            })
         });
 
         const data = await res.json();
 
+        if (chat.contains(typingBubble)) {
+            chat.removeChild(typingBubble);
+        }
+
         const timeDiv = document.createElement('div');
         timeDiv.style.cssText = "font-size: 0.67em; color: #747474; margin-left: 18px; margin-bottom: 1px; font-family: monospace;";
         timeDiv.textContent = `Processed in ${data.time || '0.000'}s`;
-        
+
         chat.appendChild(timeDiv);
 
         if (data.reply && data.reply.trim().length > 0) {
@@ -51,6 +65,9 @@ async function sendMessage() {
         chat.scrollTop = chat.scrollHeight;
 
     } catch (e) {
+        if (chat.contains(typingBubble)) {
+            chat.removeChild(typingBubble);
+        }
         console.error("Fetch error:", e);
     }
 }

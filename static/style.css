@@ -362,3 +362,23 @@ input[type="color"]::-webkit-color-swatch {
     border: 2px solid #eee;
     border-radius: 50%;
 }
+
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    margin: 0 1px;
+    background-color: #9E9E9E;
+    border-radius: 50%;
+    display: inline-block;
+    opacity: 0.4;
+    animation: 1s blink infinite forwards;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
+}
