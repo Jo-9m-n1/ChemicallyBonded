@@ -84,7 +84,7 @@ def validate_molecule(chemDict):
             return False, f"Hmmmmm, {atom} does not form bonds."
 
     if not is_supported_structure(chemDict):
-        return False, "I may have a PhD in chemistry but I only know how to draw single-center molecules up to 7 atoms."
+        return False, "I may have a PhD in chemistry but I have no clue how to generate it."
 
     total_bonds_possible = 0
     for atom, count in chemDict.items():

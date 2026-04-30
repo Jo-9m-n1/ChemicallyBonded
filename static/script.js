@@ -135,10 +135,11 @@ async function openConversation(id) {
                 chatEl.appendChild(div);
             } else {
                 const div = document.createElement('div');
-                div.className = 'messages messages--bot';
-                div.textContent = m.text;
-                chatEl.appendChild(div);
-                if (m.lewis_structure || m.vsepr) {
+                if (m.text && m.text.trim().length !== 0) { 
+                    div.className = 'messages messages--bot';
+                    div.textContent = m.text;
+                    chatEl.appendChild(div);
+                } if (m.lewis_structure || m.vsepr) {
                     chatEl.appendChild(createChemistryCard(m.vsepr, m.lewis_structure));
                 }
             }

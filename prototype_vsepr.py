@@ -484,19 +484,19 @@ def main(formula):
     print(smiles, structureVSEPR)
 
     if not expandedVSEPR:
-        mol = Chem.MolFromSmiles(smiles)
-
-        # Add explicit hydrogens
-        if containsHydrogen:
-            mol = Chem.AddHs(mol)
-        
         try:
+            mol = Chem.MolFromSmiles(smiles)
+
+            # Add explicit hydrogens
+            if containsHydrogen:
+                mol = Chem.AddHs(mol)
+        
+        
             AllChem.EmbedMolecule(mol)
             AllChem.UFFOptimizeMolecule(mol)
         except:
             error_message = "Even though I have a PhD in chemistry, I cannot " \
-            "generate the correct SMILES for this molecule with 5 surroundings " \
-            "atoms or more."
+            "generate the correct SMILES for this molecule."
             return None, error_message
     else:
         mol = smiles
