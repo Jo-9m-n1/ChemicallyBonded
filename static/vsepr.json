@@ -66,5 +66,23 @@
     "Square planar",
     "T-shaped3",
     "Linear6"
-  ]
+  ],
+  
+  "BOND_ANGLE_TABLE": {
+    "Linear2": [180.0],
+    "Trigonal planar": [120.0],
+    "Bent1": [119.0],
+    "Tetrahedral": [109.471],
+    "Trigonal pyramidal": [107.8],
+    "Bent2": [104.478],
+    "Trigonal bipyramidal": [90.0, 120.0],
+    "Seesaw": [87.8, 101.6],
+    "T-shaped2": [87.5],
+    "Linear5": [180.0],
+    "Octahedral": [90.0],
+    "Square pyramidal": [84.8, 89.5],
+    "Square planar": [90.0],
+    "T-shaped3": [90.0, 180.0],
+    "Linear6": [180.0]
+  }
 }

@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 
 import json
 import math
+import time
+from itertools import combinations
 
 import prototype_lewis_structure
 
@@ -26,80 +28,23 @@ ELEMENT_COLORS = data["ELEMENT_COLORS"]
 
 HIGH_DOMAIN_STRUCTURES = set(data["HIGH_DOMAIN_STRUCTURES"])
 
-def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D, 
-                       electronGeometry, molecule, hybridization, lone_pairs):
-    items = ""
-    stringVSEPR = ''.join(char for char in structure3D if not char.isdigit())
-    
-    for symbol in sorted(atom_symbols):
-        color = ELEMENT_COLORS.get(symbol, "#EB1388")
-        if expandedVSEPR and symbol == "F":
-            color = "#D9A420"
-        
-        items += f'''
-        <div style="display:flex; align-items:center; margin-bottom:2px;">
-            <span style="display:inline-block; width:9px; height:9px; border-radius:50%; 
-                         background:{color}; border:0.5px solid #000; margin-right:6px;"></span>
-            <span style="font-size:10px; font-family:sans-serif;">{symbol}</span>
-        </div>
-        '''
-        
-    if lone_pairs:
-        items += f'''
-        <div style="display:flex; align-items:center; margin-bottom:2px;">
-            <span style="display:inline-block; width:9px; height:9px; border-radius:50%;
-            background:blue; border:0.5px solid #000; margin-right:6px;"></span>
-            <span style="font-size:10px; font-family:sans-serif;">Lone pairs</span>
-        </div>
-        '''
-
-    legend_html = f'''
-    <div style="
-        position: absolute; 
-        bottom: 10px; 
-        left: 8px;
-        width: 190px; 
-        background: rgba(255, 255, 255, 0.9);
-        padding: 10px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        z-index: 9999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-        box-sizing: border-box;
-        line-height: 1;
-    ">
-        <div style="font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #000;">{molecule}</div>
-        
-        <div style="font-size: 11px; color: #444; margin-bottom: 8px;">
-            <b>E-Geom:</b> {electronGeometry}<br>
-            <b>M-Geom:</b> {stringVSEPR}<br>
-            <b>Hybrid:</b> {hybridization}
-        </div>
-
-        <div style="border-top: 0.5px solid #eee; padding-top: 8px;">
-            {items}
-        </div>
-    </div>
-    '''
-
-    with open(output_file, "r", encoding="utf-8") as f:
-        html = f.read()
-
-    body_start = html.find("<body")
-    if body_start == -1:
-        return
-
-    body_end = html.find(">", body_start)
-    if body_end == -1:
-        return
-
-    html = html[:body_end + 1] + legend_html + html[body_end + 1:]
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write(html)
+BOND_ANGLES_TABLE = data["BOND_ANGLE_TABLE"]
 
 
 def findBonds(G):
+    """
+    Creates a list of bonding between atoms including important properties.
+    The bonding between atoms is represented as a dictionary in this form:
+    {'to': 'H', 'toString': 'H1', 'from': 'O', 'bond_order': 1}
+    
+    'toString' represents the unique id of atom itself.
+    Args:
+        G (networkx.Graph): Graph representing the molecule
+
+    Returns:
+        bonds (List of dictionaries): Each dictionary is the bond between
+        central atom and the surrounding atom.
+    """
     bonds = []
 
     for atom1, atom2, bond_data in G.edges(data=True):
@@ -110,36 +55,8 @@ def findBonds(G):
         bond["from"] = atom1
         bond["bond_order"] = bond_data["order"]
         bonds.append(bond)
+    print(bonds)
     return bonds
-
-
-def findVSEPR(G, central):
-    bonding_pairs = len(G.edges())
-    lone_pairs = G.nodes[central]["lone_pairs"]
-    total_bonds = bonding_pairs + lone_pairs
-
-    structureVSEPR = ""
-    electronGeometry = ""
-    hybridization = ""
-
-    for key, values in VSEPR_TABLE.items():
-        if (bonding_pairs, lone_pairs) == key:
-            structureVSEPR = values
-
-    for key, values in ELECTRON_PAIR_TABLE.items():
-        if total_bonds == int(key):
-            electronGeometry = values["geometry"]
-            hybridization = values["hybridization"]
-
-    if not structureVSEPR:
-        structureVSEPR = "linear1"
-
-    if not electronGeometry:
-        structureVSEPR = "No electron geometry found"
-
-    #showPieChart(bonding_pairs, lone_pairs)
-
-    return structureVSEPR, electronGeometry, hybridization, lone_pairs
 
 
 def showPieChart(bonding_pairs, lone_pairs):
@@ -161,79 +78,38 @@ def showPieChart(bonding_pairs, lone_pairs):
     return
 
 
-def lonePairPositions(view, positions):
-    view.addSphere({
-        'center': positions,
-        'radius': 0.3,
-        'color': 'blue',
-        'opacity': '0.90'
-    })
-    return 
+def findVSEPR(G, central):
+    bonding_pairs = len(G.edges())
+    lone_pairs = G.nodes[central]["lone_pairs"]
+    total_bonds = bonding_pairs + lone_pairs
+    print(bonding_pairs, lone_pairs)
+    structureVSEPR = ""
+    electronGeometry = ""
+    hybridization = ""
 
+    for key, values in VSEPR_TABLE.items():
+        if (bonding_pairs, lone_pairs) == key:
+            structureVSEPR = values
 
-def generatingLonePairs(view, structure, mol, central, lone_pairs):
-    if mol.GetNumConformers() == 0:
-        try:
-            AllChem.EmbedMolecule(mol)
-            AllChem.UFFOptimizeMolecule(mol)
-        except:
-            return None, "Could not generate 3D coordinates for this molecule."
+    for key, values in ELECTRON_PAIR_TABLE.items():
+        if total_bonds == int(key):
+            electronGeometry = values["geometry"]
+            hybridization = values["hybridization"]
 
-    conf = mol.GetConformer()
+    if not structureVSEPR:
+        structureVSEPR = "linear1"
 
-    c_pos = [] # positions of central atom to put the lone pairs
+    if not electronGeometry:
+        electronGeometry = "No electron geometry found."
 
-    for atom in mol.GetAtoms():
-        idx = atom.GetIdx()
-        symbol = atom.GetSymbol()
-        pos = conf.GetAtomPosition(idx)
-        if symbol == central:
-            c_pos.append(pos.x)
-            c_pos.append(pos.y)
-            c_pos.append(pos.z)
-    
-    angle = rdMolTransforms.GetAngleDeg(conf, 0, 1, 2)
-    print(f"Angle: {angle:.2f}°")
+    #showPieChart(bonding_pairs, lone_pairs)
 
-    trigonal_bipyramidal_pos = [
-        {'x': -0.5 * (math.sqrt(3) / 2.0), 'y': -0.5/2, 'z': 0.0},
-        {'x': 0, 'y': 0.5, 'z': 0.0},
-        {'x': 0.5 * (math.sqrt(3) / 2.0), 'y': -0.5/2, 'z': 0.0},
-    ]
-
-    octahedral_pos = [
-        {'x': 0.0, 'y': 0.0, 'z': 0.5},
-        {'x': 0.0, 'y': 0.0, 'z': -0.5},
-        {'x': 0.0, 'y': -0.5, 'z': 0.0},
-        {'x': 0.0, 'y': 0.5, 'z': 0.0},
-    ]
-
-    if structure == "Bent1":
-        lonePairPositions(view, 
-                          {'x': c_pos[0], 'y': c_pos[1] + 0.5, 'z': c_pos[2]})
-    elif structure == "Trigonal pyramidal":
-        lonePairPositions(view, 
-                          {'x': c_pos[0], 'y': c_pos[1], 'z': c_pos[2] + 0.55})
-    elif structure == "Bent2":
-        for i in range(2):
-            lonePairPositions(view, 
-                              {'x': c_pos[0], 'y': c_pos[1] + 0.35, 'z': c_pos[2] + 0.35 * (-1)**i})
-    elif structure in ("Seesaw", "T-shaped2", "Linear5"):
-        for i in range(lone_pairs):
-            lonePairPositions(view,
-                              trigonal_bipyramidal_pos[i])    
-    elif structure in ("Square pyramidal", "Square planar", "T-shaped3", "Linear6"):
-        for i in range(lone_pairs):
-            lonePairPositions(view,
-                              octahedral_pos[i])
-    return
+    return structureVSEPR, electronGeometry, hybridization, lone_pairs
 
 
 def findFormalCharges(atom, G, bond_order, central):
     with open("static/periodic_table.json") as file:
         elements = json.load(file)
-
-    print(atom, G, bond_order, central)
 
     if atom != central:
         atomDict = None
@@ -283,10 +159,12 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
         2: "=",
         3: "#",
     }
-
+    print(bond_order)
     for bond in bond_order:
         if bond["to"] == "H":
             bond["to"] = "[H]"
+    if centralAtom == "Al":
+        centralAtom = "[Al]"
 
     expandedVSEPR = False
 
@@ -300,6 +178,8 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
             )
         else:
             stringCentralAtom = ''.join(char for char in centralAtom if not char.isdigit())
+            if stringCentralAtom == "H":
+                stringCentralAtom = "[H]"
             smilesForm = (
                 f"{stringCentralAtom}"
                 + bond_symbol[bond_order[0]["bond_order"]]
@@ -322,9 +202,6 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
         for i in range(1, len(bond_order)):
             smilesForm += "(" + bond_symbol[bond_order[i]["bond_order"]] + bond_order[i]['to'] + ")"
 
-        # special case with HClO4
-        if centralAtom == "Cl" and len(bond_order) == 5:
-            smilesForm = "[OH][Cl](=O)(=O)=O"
     
     elif structure3D in (HIGH_DOMAIN_STRUCTURES):
         expandedVSEPR = True
@@ -332,17 +209,26 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
         pt = Chem.GetPeriodicTable()
 
         central_num = pt.GetAtomicNumber(centralAtom)
-        surroundings_num = pt.GetAtomicNumber(bond_order[0]['to'])
+        surroundings_list = []
+
+        for i in range(len(bond_order)):
+            surroundings_list.append(pt.GetAtomicNumber(bond_order[i]['to']))
 
         mol = RWMol()
         s_idx = mol.AddAtom(Chem.Atom(central_num))
 
         f_indices = []
-        for i in range(len(bond_order)):
-            f_indices.append(mol.AddAtom(Chem.Atom(surroundings_num)))
+
+        for surrounding_atom in surroundings_list:
+            f_indices.append(mol.AddAtom(Chem.Atom(surrounding_atom)))
             
-        for f_idx in f_indices:
-            mol.AddBond(s_idx, f_idx, Chem.BondType.SINGLE)
+        for index, f_idx in enumerate(f_indices):
+            if bond_order[index]['bond_order'] == 2:
+                mol.AddBond(s_idx, f_idx, Chem.BondType.DOUBLE)
+            elif bond_order[index]['bond_order'] == 3:
+                mol.AddBond(s_idx, f_idx, Chem.BondType.TRIPLE)
+            else:    
+                mol.AddBond(s_idx, f_idx, Chem.BondType.SINGLE)
 
         smilesForm = mol.GetMol()
 
@@ -358,12 +244,6 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
 
     return smilesForm, containsHydrogen, expandedVSEPR
 
-
-"""
-list of molecules that doesn't work with alex's code but works with mines:
-SeOCl2, SeOF2 (computes O as bond order 1, instead of 2, and wrong VSEPR format)
-SeO2, XeO4 doesn't work properly for mines.
-"""
 
 def expanded_vsepr_structures(structure):
     d = 1.5
@@ -454,6 +334,309 @@ def expanded_vsepr_structures(structure):
     return []
 
 
+def lonePairPositions(view, positions):
+    view.addSphere({
+        'center': positions,
+        'radius': 0.3,
+        'color': 'blue',
+        'opacity': '0.90'
+    })
+    return 
+
+
+def generatingLonePairs(view, structure, mol, central, lone_pairs):
+    if mol.GetNumConformers() == 0:
+        try:
+            AllChem.EmbedMolecule(mol)
+            AllChem.UFFOptimizeMolecule(mol)
+        except:
+            print("Could not generate 3D coordinates for this molecule.")
+            return
+
+    conf = mol.GetConformer()
+
+    c_pos = [] # positions of central atom to put the lone pairs
+
+    for atom in mol.GetAtoms():
+        idx = atom.GetIdx()
+        symbol = atom.GetSymbol()
+        pos = conf.GetAtomPosition(idx)
+        if symbol == central:
+            c_pos.append(pos.x)
+            c_pos.append(pos.y)
+            c_pos.append(pos.z)
+
+    trigonal_bipyramidal_pos = [
+        {'x': -0.5 * (math.sqrt(3) / 2.0), 'y': -0.5/2, 'z': 0.0},
+        {'x': 0, 'y': 0.5, 'z': 0.0},
+        {'x': 0.5 * (math.sqrt(3) / 2.0), 'y': -0.5/2, 'z': 0.0},
+    ]
+
+    octahedral_pos = [
+        {'x': 0.0, 'y': 0.0, 'z': 0.5},
+        {'x': 0.0, 'y': 0.0, 'z': -0.5},
+        {'x': 0.0, 'y': -0.5, 'z': 0.0},
+        {'x': 0.0, 'y': 0.5, 'z': 0.0},
+    ]
+
+    if structure == "Bent1":
+        lonePairPositions(view, 
+                          {'x': c_pos[0], 'y': c_pos[1] + 0.5, 'z': c_pos[2]})
+    elif structure == "Trigonal pyramidal":
+        lonePairPositions(view, 
+                          {'x': c_pos[0], 'y': c_pos[1], 'z': c_pos[2] + 0.55})
+    elif structure == "Bent2":
+        for i in range(2):
+            lonePairPositions(view, 
+                              {'x': c_pos[0], 'y': c_pos[1] + 0.35, 
+                               'z': c_pos[2] + 0.35 * (-1)**i})
+    elif structure in ("Seesaw", "T-shaped2", "Linear5"):
+        for i in range(lone_pairs):
+            lonePairPositions(view,
+                              trigonal_bipyramidal_pos[i])    
+    elif structure in ("Square pyramidal", "Square planar", "T-shaped3", 
+                       "Linear6"):
+        for i in range(lone_pairs):
+            lonePairPositions(view,
+                              octahedral_pos[i])
+    return
+
+
+def findBondAngles(mol, central, structure3D):
+    conf = mol.GetConformer()
+    center_atom_obj = None
+
+    for atom in mol.GetAtoms():
+        if atom.GetSymbol() == central:
+            center_atom_obj = atom
+
+    if center_atom_obj is None:
+        return [], None
+
+    center_atom_index = center_atom_obj.GetIdx()
+
+    neighbors = []
+    for neighbor in center_atom_obj.GetNeighbors():
+        neighbors.append(neighbor.GetIdx())
+
+    if len(neighbors) < 2:
+        return [], None
+    
+    angle_data = []
+    angles = set()
+
+    for atom1_index, atom3_index in combinations(neighbors, 2):
+        angle = rdMolTransforms.GetAngleDeg(
+            conf,
+            atom1_index,
+            center_atom_index,
+            atom3_index
+        )
+        angle = round(angle, 2)
+    
+        if structure3D not in ("Linear2", "Linear5", "Linear6"):
+            if angle == 180.0:
+                print("works")
+                continue
+
+        if angle in angles:
+            continue
+        
+        angles.add(angle)
+
+        angle_data.append({
+            "atom1": atom1_index,
+            "center": center_atom_index,
+            "atom3": atom3_index,
+            "angle": angle
+        })
+
+    return angle_data, angles
+
+
+def bondAngleGraph(angles, structure3D):
+    if not angles:
+        return
+
+    angles = sorted(list(angles))
+    ideal_angles = BOND_ANGLES_TABLE[structure3D]
+
+    print(angles, ideal_angles)
+
+    # making sure that both lists are the same minimum length
+    min_len = min(len(angles), len(ideal_angles))
+    angles = angles[:min_len]
+    ideal_angles = ideal_angles[:min_len]
+
+    angles_label = []
+    for i in range(min_len):
+        angles_label.append(f"Angles {i + 1}")
+
+    x = np.arange(min_len)
+    w = 0.4
+    
+    plt.figure(figsize=(7,5))
+
+    bar1 = plt.bar(x-w/2, ideal_angles, w, label="Ideal Angles")
+    bar2 = plt.bar(x+w/2, angles, w, label="Angles Calculated")
+    
+    plt.bar_label(bar1, fmt="%.3f")
+    plt.bar_label(bar2, fmt="%.3f")
+
+    all_values = ideal_angles + angles
+    y_min = min(all_values) - 5
+    y_max = max(all_values) + 5
+    plt.ylim(y_min, y_max)
+    plt.ylim(y_min, y_max)
+
+    plt.xticks(x, angles_label)
+    plt.ylabel("Degree")
+    plt.title(f"Ideal Bond Angle vs. Calculated Bond Angles: {structure3D}")
+    plt.legend()
+
+    plt.savefig("double_bar_graph.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    return
+
+
+def xyz(pos):
+    return {
+        'x': float(pos[0]),
+        'y': float(pos[1]),
+        'z': float(pos[2])
+    }
+
+
+def get_pos(conf, atom_idx):
+    p = conf.GetAtomPosition(atom_idx)
+    return np.array([p.x, p.y, p.z])
+
+
+def addBondAngleArc(view, mol, atom1_idx, center_idx, atom3_idx,
+                          angle):
+    size = 0.75
+    color = "yellow"
+    
+    conf = mol.GetConformer()
+    
+    p1 = get_pos(conf, atom1_idx)
+    pc = get_pos(conf, center_idx)
+    p3 = get_pos(conf, atom3_idx)
+
+    # find positions from where to start the arc and where to end
+    start = pc + (p1 - pc) * size
+    end = pc + (p3 - pc) * size
+
+    middle = (start + end) / 2
+
+    push_direction = middle - pc
+
+    if np.linalg.norm(push_direction) != 0:
+        push_direction = push_direction / np.linalg.norm(push_direction)
+        middle = middle + push_direction * 0.15
+    else:
+        middle = pc + np.array([0, 0, 0.45])
+
+    view.addCylinder({
+        'start': xyz(start),
+        'end': xyz(middle),
+        'radius': 0.025,
+        'color': color,
+        'opacity': 0.9
+    })
+
+    view.addCylinder({
+        'start': xyz(middle),
+        'end': xyz(end),
+        'radius': 0.025,
+        'color': color,
+        'opacity': 0.9
+    })
+
+    view.addLabel(f"{angle}°", {
+        'position': xyz(middle),
+        'fontColor': color,
+        'backgroundColor': 'black',
+        'backgroundOpacity': 0.5,
+        'fontSize': 14
+    })
+
+
+def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D, 
+                       electronGeometry, molecule, hybridization, lone_pairs,
+                        angle):
+    items = ""
+    stringVSEPR = ''.join(char for char in structure3D if not char.isdigit())
+
+    for symbol in sorted(atom_symbols):
+        color = ELEMENT_COLORS.get(symbol, "#EB1388")
+        if expandedVSEPR and symbol == "F":
+            color = "#D9A420"
+
+        items += f'''
+        <div style="display:flex; align-items:center; margin-bottom:2px;">
+            <span style="display:inline-block; width:9px; height:9px; border-radius:50%; 
+                         background:{color}; border:0.5px solid #000; margin-right:6px;"></span>
+            <span style="font-size:10px; font-family:sans-serif;">{symbol}</span>
+        </div>
+        '''
+
+    if lone_pairs:
+        items += f'''
+        <div style="display:flex; align-items:center; margin-bottom:2px;">
+            <span style="display:inline-block; width:9px; height:9px; border-radius:50%;
+            background:blue; border:0.5px solid #000; margin-right:6px;"></span>
+            <span style="font-size:10px; font-family:sans-serif;">Lone pairs</span>
+        </div>
+        '''
+
+    legend_html = f'''
+    <div style="
+        position: absolute; 
+        bottom: 10px; 
+        left: 8px;
+        width: 190px; 
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        box-sizing: border-box;
+        line-height: 1;
+    ">
+        <div style="font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #000;">{molecule}</div>
+
+        <div style="font-size: 11px; color: #444; margin-bottom: 8px;">
+            <b>E-Geom:</b> {electronGeometry}<br>
+            <b>M-Geom:</b> {stringVSEPR}<br>
+            <b>Hybrid:</b> {hybridization}<br>
+            <b>Bond Angles:</b> {angle}
+        </div>
+
+        <div style="border-top: 0.5px solid #eee; padding-top: 8px;">
+            {items}
+        </div>
+    </div>
+    '''
+
+    with open(output_file, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    body_start = html.find("<body")
+    if body_start == -1:
+        return
+
+    body_end = html.find(">", body_start)
+    if body_end == -1:
+        return
+
+    html = html[:body_end + 1] + legend_html + html[body_end + 1:]
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(html)
+
+
 def main(formula):
     try:
         with open(f"static/generated/vsepr_{formula}.html", "r") as f:
@@ -461,6 +644,7 @@ def main(formula):
             return None, None
     except FileNotFoundError:
         pass
+
     molecule, central, networkxGraph = prototype_lewis_structure.main(formula)
 
     if central == None:
@@ -477,21 +661,22 @@ def main(formula):
         formalCharge = findFormalCharges(key, networkxGraph, bonds, central)
         if formalCharge:
             formalChargeDict[key] = formalCharge
+
     try:
         smiles, containsHydrogen, expandedVSEPR = findSMILES(structureVSEPR, central, bonds, containsHydrogen, formalChargeDict)
     except:
         return None, "Even though I have a PhD in chemistry, I cannot generate the correct SMILES for this molecule."
+    
     print(smiles, structureVSEPR)
 
     if not expandedVSEPR:
-        try:
-            mol = Chem.MolFromSmiles(smiles)
+        mol = Chem.MolFromSmiles(smiles)
 
-            # Add explicit hydrogens
-            if containsHydrogen:
-                mol = Chem.AddHs(mol)
+        # Add explicit hydrogens
+        if containsHydrogen:
+            mol = Chem.AddHs(mol)
         
-        
+        try:
             AllChem.EmbedMolecule(mol)
             AllChem.UFFOptimizeMolecule(mol)
         except:
@@ -513,18 +698,33 @@ def main(formula):
         generatingLonePairs(view, structureVSEPR, mol, central, lone_pairs)
     except:
         return None, "Even though I have a PhD in chemistry, I cannot generate this molecule's lone pairs."
+
+    try:
+        angle_data, angle = findBondAngles(mol, central, structureVSEPR)
+
+        for item in angle_data:
+            addBondAngleArc(
+                view,
+                mol,
+                item["atom1"],
+                item["center"],
+                item["atom3"],
+                item["angle"]
+            )
+        #bondAngleGraph(angle, structureVSEPR)
+    except:
+        angle = "No VSEPR angles associated with this molecule."
+
     view.zoomTo({"sphere": {"scale": 0.5}}, 2000, True)
 
-    output_file = f"static/generated/vsepr_{formula}.html"
+    output_file = f"static/generated/VSEPR_{formula}.html"
     with open(output_file, "w", encoding="utf-8") as f:
         view.write_html(f, fullpage=True)
 
     # added: get atoms from molecule and add legend
     atom_symbols = {atom.GetSymbol() for atom in mol.GetAtoms()}
     add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structureVSEPR, 
-                    electronVSEPR, formula, hybridization, lone_pairs)
+                       electronVSEPR, formula, hybridization, lone_pairs,
+                       angle)
     
     return None, None
-    # James!!!! Change this later!!
-    # When there is an error in your function, make sure to return None and then the error message!
-    # None, "This is an error :)"
