@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 import json
 import math
-import time
+
 from itertools import combinations
 
 import prototype_lewis_structure
@@ -33,17 +33,17 @@ BOND_ANGLES_TABLE = data["BOND_ANGLE_TABLE"]
 
 def findBonds(G):
     """
-    Creates a list of bonding between atoms including important properties.
-    The bonding between atoms is represented as a dictionary in this form:
-    {'to': 'H', 'toString': 'H1', 'from': 'O', 'bond_order': 1}
+    Creates a list of bonding between atoms including important properties. The
+    bonding between atoms is represented as a dictionary in this form: 
+    {'to': 'H', 'toString': 'H1', 'from': 'O', 'bond_order': 1} 
+    'toString' represents the unique id of atom itself. 
     
-    'toString' represents the unique id of atom itself.
-    Args:
-        G (networkx.Graph): Graph representing the molecule
-
-    Returns:
-        bonds (List of dictionaries): Each dictionary is the bond between
-        central atom and the surrounding atom.
+    Args: 
+        G (networkx.Graph): Graph representing the molecule 
+    
+    Returns: 
+        bonds (list of dictionaries): Each dictionary is the bond between 
+        central atom and the surrounding atom. 
     """
     bonds = []
 
@@ -55,11 +55,23 @@ def findBonds(G):
         bond["from"] = atom1
         bond["bond_order"] = bond_data["order"]
         bonds.append(bond)
-    print(bonds)
     return bonds
 
 
 def showPieChart(bonding_pairs, lone_pairs):
+    """
+    This if for metric purposes. It creates a pie chart that distribution on the
+    number of bonding pairs and lone pairs in a comprehensive pie chart. This
+    shows which is type of domain doing the most repulsion.
+
+    Args:
+        bonding_pairs (int): Any surrounding that is connected to the central
+        atom.
+        lone_pairs (int): Lone pairs of valence electrons to the central.
+
+    Returns:
+        None
+    """
     total = bonding_pairs + lone_pairs
     
     sizes = np.array([
@@ -79,10 +91,28 @@ def showPieChart(bonding_pairs, lone_pairs):
 
 
 def findVSEPR(G, central):
+    """
+    Finds the VSEPR / molecular geometry of the molecule from the number of
+    bonding pairs and lone pairs. Each molecular structure is associated with
+    a specific pattern. For example, "tetrahedral" is associated with 4 bonding
+    pairs and 0 lone pairs, "trigonal pyramidal" is associated with 3 bonding
+    pairs and 1 lone pairs, etc.
+
+    Args:
+        G (networkx.Graph): Graph representing the molecule 
+        central (str): Name of central atom.
+
+    Returns:
+        structureVSEPR (str): Molecular Geometry
+        electronGeometry (str): Electron Geometry is the molecular geometry
+        without the lone pairs.
+        hybridization (str): The orbital mixing type (e.g., 'sp3')
+        based on the number of domain.
+        lone_pairs (int): Number of lone pairs.
+    """
     bonding_pairs = len(G.edges())
     lone_pairs = G.nodes[central]["lone_pairs"]
     total_bonds = bonding_pairs + lone_pairs
-    print(bonding_pairs, lone_pairs)
     structureVSEPR = ""
     electronGeometry = ""
     hybridization = ""
@@ -102,30 +132,38 @@ def findVSEPR(G, central):
     if not electronGeometry:
         electronGeometry = "No electron geometry found."
 
-    #showPieChart(bonding_pairs, lone_pairs)
+    #showPieChart(bonding_pairs, lone_pairs) # uncomment this for metric purposes
 
     return structureVSEPR, electronGeometry, hybridization, lone_pairs
 
 
-def findFormalCharges(atom, G, bond_order, central):
+def findFormalCharges(atom2, G, bond, central):
+    """
+    Finds formal charges for a specific surrounding atom based on its bonding.
+
+    Args:
+        atom2 (str): The unique id of atom itself.
+        G (networkx.Graph): G (networkx.Graph): Graph representing the molecule
+        bond_order (dict): Includes the properties of the molecule.
+        central (str): Name of central atom.
+
+    Returns:
+        stringFormalCharge (str): The charge (e.g. "2+", "-", "2-")
+    """
     with open("static/periodic_table.json") as file:
         elements = json.load(file)
 
-    if atom != central:
-        atomDict = None
-        for i in range(len(bond_order)):
-            if atom == bond_order[i]['to']:
-                atomDict = bond_order[i]
-                break
+    atom = ''.join(char for char in atom2 if not char.isdigit())
 
-        if atomDict is None:
+    if atom != central:
+        if bond is None:
             return ""
 
-        atom = atomDict['to']
-        specificAtom = atomDict["toString"]
+        atom = bond['to']
+        specificAtom = bond["toString"]
 
         valenceElectrons = elements[atom]["valence_electrons"]
-        bondingOrder = int(atomDict["bond_order"])
+        bondingOrder = int(bond["bond_order"])
         lonePairs = int(G.nodes[specificAtom]["lone_pairs"]) * 2
 
         formalCharges = valenceElectrons - lonePairs - bondingOrder
@@ -133,13 +171,10 @@ def findFormalCharges(atom, G, bond_order, central):
         valenceElectrons = elements[central]["valence_electrons"]
         lonePairs = int(G.nodes[central]["lone_pairs"]) * 2
 
-        bondingOrder = 0
-        for i in range(len(bond_order)):
-            if bond_order[i]["from"] == central:
-                bondingOrder += int(bond_order[i]["bond_order"])
+        bondingOrder = int(bond["bond_order"])
 
         formalCharges = valenceElectrons - lonePairs - bondingOrder
-    print(valenceElectrons, lonePairs, bondingOrder)
+
     if formalCharges > 0:
         stringFormalCharge = "+" + str(formalCharges)
     elif formalCharges < 0:
@@ -149,17 +184,28 @@ def findFormalCharges(atom, G, bond_order, central):
     return stringFormalCharge.replace("1", "")
 
 
-def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalChargeDict):
+def findSMILES(structure3D, centralAtom, bond_order, formalChargeDict):
     """
-    Convert the user molecule to SMILES format with the VSEPR structure, central atom,
-    and bond order.
+    Parses the molecule to proper SMILES formatting that RDKit can read.
+
+    Args:
+        structureVSEPR (str): Molecular Geometry
+        centralAtom (str): Name of central atom.
+        bonds (list of dictionaries): Each dictionary is the bond between 
+        central atom and the surrounding atom. 
+        formalChargeDict (dict): It contains each atom's specific formal charge.
+
+    Returns:
+        smilesForm (str): SMILES formatted string.
+        expandedVSEPR (bool): Bool that checks if the VSEPR structure is more
+        than 4 domains and has to be created manually.
     """
     bond_symbol = {
         1: "",
         2: "=",
         3: "#",
     }
-    print(bond_order)
+
     for bond in bond_order:
         if bond["to"] == "H":
             bond["to"] = "[H]"
@@ -192,8 +238,14 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
 
         smilesForm = f"{leftForm}[{centralAtom}]{rightForm}"
 
+        if formalChargeDict:
+            smilesForm = f"{leftForm}[{centralAtom}]{rightForm}"
+
     elif structure3D in ("Trigonal planar", "Trigonal pyramidal"):
-        smilesForm = f"{centralAtom}"
+        if not centralAtom == "[Al]":
+            smilesForm = f"[{centralAtom}]"
+        else:
+            smilesForm = f"{centralAtom}"
         for i in range(len(bond_order)):
             smilesForm += "(" + bond_symbol[bond_order[i]["bond_order"]] + bond_order[i]['to'] + ")"
 
@@ -201,7 +253,6 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
         smilesForm = bond_order[0]['to'] + bond_symbol[bond_order[0]["bond_order"]] + f"[{centralAtom}]"
         for i in range(1, len(bond_order)):
             smilesForm += "(" + bond_symbol[bond_order[i]["bond_order"]] + bond_order[i]['to'] + ")"
-
     
     elif structure3D in (HIGH_DOMAIN_STRUCTURES):
         expandedVSEPR = True
@@ -242,10 +293,20 @@ def findSMILES(structure3D, centralAtom, bond_order, containsHydrogen, formalCha
     else:
         smilesForm = centralAtom
 
-    return smilesForm, containsHydrogen, expandedVSEPR
+    return smilesForm, expandedVSEPR
 
 
 def expanded_vsepr_structures(structure):
+    """
+    Creates the atom in specific position in the py3Dmol viewer to mimic the
+    correct VSEPR structure.
+
+    Args:
+        structureVSEPR (str): Molecular Geometry
+
+    Returns:
+        coords (np.array): Coordinates of the position of surrounding atoms.
+    """
     d = 1.5
     sqrt3_over_2 = math.sqrt(3) / 2.0
     # standard octahedral vertices: (+-d, 0, 0), (0, +-d, 0), (0, 0, +-d)
@@ -335,6 +396,18 @@ def expanded_vsepr_structures(structure):
 
 
 def lonePairPositions(view, positions):
+    """
+    Helper function that adds a sphere to the position in the py3Dmol viewer.
+
+    Args:
+        view (py3Dmol.view): The 3D py3Dmol viewer where the lone pair sphere 
+        is added.
+        positions (dict): The x, y, and z coordinates where the sphere will be 
+        placed.
+
+    Returns:
+        None
+    """
     view.addSphere({
         'center': positions,
         'radius': 0.3,
@@ -345,6 +418,21 @@ def lonePairPositions(view, positions):
 
 
 def generatingLonePairs(view, structure, mol, central, lone_pairs):
+    """
+    Creates the lone pairs associated with the central atom of the molecule.
+
+    Args:
+        view (py3Dmol.view): The 3D py3Dmol viewer where the lone pair sphere 
+        is added.
+        structure (str): Molecular Geometry
+        mol (rdkit.Chem.rdchem.Mol): RDKit molecule object containing the 
+        atoms, bonds, and 3D coordinates of the molecule.
+        central (str): Name of central atom.
+        lone_pairs (int): Number of lone pairs.
+
+    Returns:
+        None
+    """
     if mol.GetNumConformers() == 0:
         try:
             AllChem.EmbedMolecule(mol)
@@ -403,6 +491,23 @@ def generatingLonePairs(view, structure, mol, central, lone_pairs):
 
 
 def findBondAngles(mol, central, structure3D):
+    """
+    Calculates the bond angles of the constructed molecule using RDKit's
+    conformer. Given the 3D position of each atom, it calculates the angle
+    between the two in 2D space. 
+
+    Args:
+        mol (rdkit.Chem.rdchem.Mol): RDKit molecule object containing the 
+        atoms, bonds, and 3D coordinates of the molecule.
+        central (str): Name of central atom.
+        structure3D (str): Molecular Geometry
+
+    Returns:
+        angle_data (list of dictionaries): Stores the data associated with
+        bond angle, such as the names of the two atoms calculated.
+        angles (set): Avoid duplicates of bond angles and this variable will
+        be the one to show to the user.
+    """
     conf = mol.GetConformer()
     center_atom_obj = None
 
@@ -436,7 +541,6 @@ def findBondAngles(mol, central, structure3D):
     
         if structure3D not in ("Linear2", "Linear5", "Linear6"):
             if angle == 180.0:
-                print("works")
                 continue
 
         if angle in angles:
@@ -455,13 +559,22 @@ def findBondAngles(mol, central, structure3D):
 
 
 def bondAngleGraph(angles, structure3D):
+    """
+    For metrics purposes, creates a graph that compares the bond angles and
+    the awaited bond angles associated with its VSEPR structure.
+
+    Args:
+        angles (set): Description here.
+        structure3D (str): Molecular Geometry
+
+    Returns:
+        None
+    """
     if not angles:
         return
 
     angles = sorted(list(angles))
     ideal_angles = BOND_ANGLES_TABLE[structure3D]
-
-    print(angles, ideal_angles)
 
     # making sure that both lists are the same minimum length
     min_len = min(len(angles), len(ideal_angles))
@@ -500,6 +613,16 @@ def bondAngleGraph(angles, structure3D):
 
 
 def xyz(pos):
+    """
+    Helper function that converts a 3D position into a dictionary format that
+    py3Dmol can use.
+
+    Args:
+        pos (np.array): The x, y, and z coordinates of a position.
+
+    Returns:
+        position_dict (dict): Contains the x, y, and z coordinates.
+    """
     return {
         'x': float(pos[0]),
         'y': float(pos[1]),
@@ -508,12 +631,41 @@ def xyz(pos):
 
 
 def get_pos(conf, atom_idx):
+    """
+    Gets the 3D coordinates from the RDKit conformer.
+
+    Args:
+        conf (rdkit.Chem.rdchem.Conformer): The RDKit conformer containing the
+        3D coordinates of the molecule.
+        atom_idx (int): The index of the atom.
+
+    Returns:
+        position_array (np.array): Array containing the x, y, and z coordinates
+        of the atom.
+    """
     p = conf.GetAtomPosition(atom_idx)
     return np.array([p.x, p.y, p.z])
 
 
 def addBondAngleArc(view, mol, atom1_idx, center_idx, atom3_idx,
                           angle):
+    """
+    Adds a visual bond angle arc between two bonded atoms around the central
+    atom in the py3Dmol viewer.
+
+    Args:
+        view (py3Dmol.view): The 3D py3Dmol viewer where the bond angle arc is
+        added.
+        mol (rdkit.Chem.rdchem.Mol): RDKit molecule object containing the 
+        atoms, bonds, and 3D coordinates of the molecule.
+        atom1_idx (int): Index of the first surrounding atom.
+        center_idx (int): Index of the central atom.
+        atom3_idx (int): Index of the second surrounding atom.
+        angle (set): The calculated bond angles in degrees.
+
+    Returns:
+        None
+    """
     size = 0.75
     color = "yellow"
     
@@ -565,6 +717,12 @@ def addBondAngleArc(view, mol, atom1_idx, center_idx, atom3_idx,
 def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D, 
                        electronGeometry, molecule, hybridization, lone_pairs,
                         angle):
+    """
+    Overwrites the outputted HTML file with a HTML tab that shows extra 
+    information about the VSEPR structure and molecule.
+    """
+    
+    
     items = ""
     stringVSEPR = ''.join(char for char in structure3D if not char.isdigit())
 
@@ -638,6 +796,17 @@ def add_legend_to_html(output_file, atom_symbols, expandedVSEPR, structure3D,
 
 
 def main(formula):
+    """
+    Main code logic and error detection. It creates the HTML file with the
+    interactive 3D molecule.
+
+    Args:
+        formula (str): The user inputted string taken from the app.py and the
+        chatbot recognition.
+
+    Returns:
+        None
+    """
     try:
         with open(f"static/generated/vsepr_{formula}.html", "r") as f:
             content = f.read()
@@ -652,31 +821,35 @@ def main(formula):
 
     bonds = findBonds(networkxGraph)
     structureVSEPR, electronVSEPR, hybridization, lone_pairs = findVSEPR(networkxGraph, central)
-
+    
     formalChargeDict = {}
     containsHydrogen = False
+
     for key in molecule:
         if key == "H":
             containsHydrogen = True
-        formalCharge = findFormalCharges(key, networkxGraph, bonds, central)
+    
+    for bond in bonds:
+        key = bond["toString"]
+        formalCharge = findFormalCharges(key, networkxGraph, bond, central)
         if formalCharge:
             formalChargeDict[key] = formalCharge
 
     try:
-        smiles, containsHydrogen, expandedVSEPR = findSMILES(structureVSEPR, central, bonds, containsHydrogen, formalChargeDict)
+        smiles, expandedVSEPR = findSMILES(structureVSEPR, central, bonds, formalChargeDict)
     except:
-        return None, "Even though I have a PhD in chemistry, I cannot generate the correct SMILES for this molecule."
-    
-    print(smiles, structureVSEPR)
+        error_message = "Even though I have a PhD in chemistry, I cannot " \
+        "generate the correct SMILES for this molecule."
+        return None, error_message
 
     if not expandedVSEPR:
-        mol = Chem.MolFromSmiles(smiles)
-
-        # Add explicit hydrogens
-        if containsHydrogen:
-            mol = Chem.AddHs(mol)
-        
         try:
+            mol = Chem.MolFromSmiles(smiles)
+
+            # Add explicit hydrogens
+            if containsHydrogen:
+                mol = Chem.AddHs(mol)
+
             AllChem.EmbedMolecule(mol)
             AllChem.UFFOptimizeMolecule(mol)
         except:
@@ -697,7 +870,9 @@ def main(formula):
     try:
         generatingLonePairs(view, structureVSEPR, mol, central, lone_pairs)
     except:
-        return None, "Even though I have a PhD in chemistry, I cannot generate this molecule's lone pairs."
+        error_message = "Even though I have a PhD in chemistry, I cannot " \
+        "generate this molecule's lone pairs."
+        return None, error_message
 
     try:
         angle_data, angle = findBondAngles(mol, central, structureVSEPR)

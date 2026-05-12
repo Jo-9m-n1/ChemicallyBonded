@@ -53,7 +53,8 @@
     "P": "#FF8000",
     "B": "#1FF01F",
     "Si": "#F0C8A0",
-    "As": "#EB1388"
+    "As": "#EB1388",
+    "Al": "#7c7c8b"
   },
 
   "HIGH_DOMAIN_STRUCTURES": [
