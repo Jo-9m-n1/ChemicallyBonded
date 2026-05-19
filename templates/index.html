@@ -4,7 +4,7 @@
 <section class="app-layout">
     <section class="left-box">
         <div id="home-view">
-            <h2>Chat History</h2>
+            <h3>Chat History</h3>
             <button onclick="startNewChat()" class="new-chat-btn" id="ui-new-chat">
                 <i class="fa-solid fa-plus"></i> New Question
             </button>
@@ -13,7 +13,16 @@
             </div>
         </div>
         <div id="profile-view" style="display: none;">
-            <h2>Profile</h2>
+            <h3>Profile</h3>
+            <div class="theme-settings">
+                <h3>Dr. Lewis' Verbosity</h3>
+                <select id="verbosity-select" class="glass-select">
+                    <option value="not at all">Silent</option>
+                    <option value="less">Concise</option>
+                    <option value="medium" selected>Standard</option>
+                    <option value="a lot">Detailed</option>
+                </select>
+            </div>
             <div class="theme-settings">
                 <h3>Theme Customization</h3>
                 <div class="color-picker-group">
@@ -32,19 +41,25 @@
                 </div>
             </div>
         </div>
-        <div class="tab">
-            <div class="home">Home</div>
-            <div class="profile">Profile</div>
+        <div class="tab" role="tablist">
+            <div class="tab-segment home tab-segment--active" tabindex="0">Home</div>
+            <div class="tab-segment profile" tabindex="0">Profile</div>
         </div>
     </section>
 
     <section class="chat" aria-label="Chemistry chat">
-        <h3>Dr. Lewis</h3>
-        <div id="chat" class="messages"></div>
-        <div class="chat-footer">
-            <input id="message-input" class="chat-input" type="text" placeholder="Type your question here...">
-            <button type="button" id="sendQuestion" class="send">Send</button>
+    <h3>Dr. Lewis</h3>
+    <div id="chat" class="messages">
+        <div id="typing-indicator" class="typing-bubble" style="display: none;">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
         </div>
+    </div>
+    <div class="chat-footer">
+        <input id="message-input" class="chat-input" type="text" placeholder="Type your question here...">
+        <button type="button" id="sendQuestion" class="send">Send</button>
+    </div>
     </section>
 </section>
 {% endblock %}

@@ -1,6 +1,6 @@
 :root {
     --bg-color-1: #b8b8ff;
-    --bg-color-2: #f8f7ff;
+    --bg-color-2: #e7e3ff;
     --bg-color-3: #ffd8be;
 }
 
@@ -10,20 +10,78 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    cursor: default;
 }
 
 .app-layout {
     display: flex;
     gap: 20px;
-    max-width: 1100px;
+}
+
+.chemistry-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    padding: 10px;
+    margin-bottom: 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    align-self: stretch;
+    box-sizing: border-box;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.mol-viewer {
+    display: block;
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    height: clamp(100px, 72vh, 380px);
+    border-radius: 10px;
+    border: none;
+    box-sizing: border-box;
+}
+
+.lewis-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    text-align: center;
+    line-height: 0;
+}
+
+.lewis-structure {
+    display: inline-block;
+    max-width: 100%;
+    max-height: min(52vh, 520px);
+    width: auto;
+    height: auto;
+    vertical-align: middle;
+    border-radius: 10px;
+    box-sizing: border-box;
+    object-fit: contain;
+}
+
+.viewer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: auto;
+    border-radius: 10px;
 }
 
 #left-box::-webkit-scrollbar,
-#chat::-webkit-scrollbar {
+#chat::-webkit-scrollbar, 
+.chemistry-card::-webkit-scrollbar {
     display: none;
 }
 
-.chat h3 {
+h3 {
     margin: 0px;
     color: black;
     text-align: center;
@@ -31,6 +89,7 @@ body {
 
 .chat {
     flex: 1;
+    min-width: 0;
 }
 
 .left-box, .chat {
@@ -50,7 +109,8 @@ body {
 }
 
 #home-view, #profile-view {
-    flex-grow: 1; 
+    flex-grow: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -58,12 +118,13 @@ body {
 
 #history-list, #chat.messages {
     flex-grow: 1;
+    min-width: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
 }
 
 #history-list::-webkit-scrollbar, 
@@ -99,6 +160,7 @@ body {
     color: white;
     border-bottom-right-radius: 6px;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    margin: 10px;
 }
 
 .messages--bot {
@@ -106,6 +168,7 @@ body {
     align-self: flex-start;
     background: rgba(255, 255, 255, 0.6);
     color: #111827;
+    margin-bottom: 10px;
     border-bottom-left-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
@@ -136,11 +199,20 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.left-box {
+    flex: 0 0 275px;
+    width: 275px;
+    min-width: 275px;
+    max-width: 275px;
+    box-sizing: border-box;
+}
+
 #left-box {
-    height: 70vh;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     gap: 0px;
-    width: 300px;
+    width: 100%;
 }
 
 .left-box h2 {
@@ -155,6 +227,12 @@ body {
 
 .history-item {
     padding:10px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.history-item:hover {
+    background: rgba(255, 255, 255, 0.35);
 }
 
 .tab, .chat-footer {
@@ -173,34 +251,59 @@ body {
     display: flex;
     width: 100%;
     margin-top: 10px;
+    padding: 4px;
+    gap: 4px;
     background: rgba(255, 255, 255, 0.4);
     border-radius: 25px;
-    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
     flex-shrink: 0;
 }
 
-.home, .profile {
+.tab-segment {
     flex: 1;
-    padding: 6px;
+    padding: 10px 12px;
     text-align: center;
-    width: fit-content;
-    margin: 0 auto;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
 }
 
-.home:hover, .profile:hover {
-    transform: translateY(-1px);
-    cursor: pointer;
+.tab-segment--active {
+    background: rgba(37, 99, 235, 0.78);
+    color: #fff;
+}
+
+.tab-segment:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.6);
+    outline-offset: 2px;
 }
 
 .new-chat-btn {
     padding: 10px;
-    margin-bottom: 10px;
+    margin: 10px;
     border-radius: 25px;
     border: 0px solid;
     background-color: rgba(82, 171, 255, 0.1);
     outline: none;
     cursor: pointer;
     font-weight: 600;
+}
+
+.glass-select {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: black;
+    padding: 5px 10px;
+    outline: none;
+    cursor: pointer;
 }
 
 .theme-settings {
@@ -222,8 +325,11 @@ body {
 
 .color-picker-group {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 15px;
     align-items: center;
+    max-width: 100%;
 }
 
 .picker-item {
@@ -240,11 +346,12 @@ body {
 }
 
 input[type="color"] {
-    border: none;
     width: 40px;
     height: 40px;
-    cursor: pointer;
-    background: none;
+    border-radius: 50%; 
+    backdrop-filter: blur(10px);
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 input[type="color"]::-webkit-color-swatch-wrapper {
@@ -254,4 +361,24 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 input[type="color"]::-webkit-color-swatch {
     border: 2px solid #eee;
     border-radius: 50%;
+}
+
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    margin: 0 1px;
+    background-color: #9E9E9E;
+    border-radius: 50%;
+    display: inline-block;
+    opacity: 0.4;
+    animation: 1s blink infinite forwards;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
 }

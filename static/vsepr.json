@@ -1,0 +1,89 @@
+{
+  "VSEPR_TABLE": {
+    "2,0": "Linear2",
+    "3,0": "Trigonal planar",
+    "2,1": "Bent1",
+    "4,0": "Tetrahedral",
+    "3,1": "Trigonal pyramidal",
+    "2,2": "Bent2",
+    "5,0": "Trigonal bipyramidal",
+    "4,1": "Seesaw",
+    "3,2": "T-shaped2",
+    "2,3": "Linear5",
+    "6,0": "Octahedral",
+    "5,1": "Square pyramidal",
+    "4,2": "Square planar",
+    "3,3": "T-shaped3",
+    "2,4": "Linear6"
+  },
+
+  "ELECTRON_PAIR_TABLE": {
+    "2": {
+      "geometry": "Linear",
+      "hybridization": "sp"
+    },
+    "3": {
+      "geometry": "Trigonal planar",
+      "hybridization": "sp2"
+    },
+    "4": {
+      "geometry": "Tetrahedral",
+      "hybridization": "sp3"
+    },
+    "5": {
+      "geometry": "Trigonal bipyramidal",
+      "hybridization": "sp3d"
+    },
+    "6": {
+      "geometry": "Octahedral",
+      "hybridization": "sp3d2"
+    }
+  },
+
+  "ELEMENT_COLORS": {
+    "H": "#FFFFFF",
+    "C": "#909090",
+    "N": "#3050F8",
+    "O": "#FF0D0D",
+    "F": "#D9A420",
+    "Cl": "#1FF01F",
+    "Br": "#A62929",
+    "I": "#940094",
+    "S": "#fac431",
+    "P": "#FF8000",
+    "B": "#1FF01F",
+    "Si": "#F0C8A0",
+    "As": "#EB1388",
+    "Al": "#7c7c8b"
+  },
+
+  "HIGH_DOMAIN_STRUCTURES": [
+    "Trigonal bipyramidal",
+    "Seesaw",
+    "T-shaped2",
+    "Linear5",
+    "Octahedral",
+    "Square pyramidal",
+    "Square planar",
+    "T-shaped3",
+    "Linear6"
+  ],
+  
+  "BOND_ANGLE_TABLE": {
+    "Linear2": [180.0],
+    "Trigonal planar": [120.0],
+    "Bent1": [119.0],
+    "Tetrahedral": [109.471],
+    "Trigonal pyramidal": [107.8],
+    "Bent2": [104.478],
+    "Trigonal bipyramidal": [90.0, 120.0],
+    "Seesaw": [87.8, 101.6],
+    "T-shaped2": [87.5],
+    "Linear5": [180.0],
+    "Octahedral": [90.0],
+    "Square pyramidal": [84.8, 89.5],
+    "Square planar": [90.0],
+    "T-shaped3": [90.0, 180.0],
+    "Linear6": [180.0]
+  }
+}
