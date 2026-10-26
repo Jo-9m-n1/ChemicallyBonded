@@ -1,8 +1,9 @@
 
 <img src="https://readme-typing-svg.herokuapp.com?font=Roboto+Bold&size=35&pause=1000&color=87CEEB&width=500&height=70&lines=Chemically+Bonded" alt="Chemically Bonded"/>
 
-![Python](https://img.shields.io/badge/Python-yellow)
-![Gemini API](https://img.shields.io/badge/Gemini%20API-blue)
+![Python](https://img.shields.io/badge/Python-blue)
+![JavaScript](https://img.shields.io/badge/JavaScript-yellow)
+![Gemini API](https://img.shields.io/badge/Gemini%20API-green)
 
 **Chemically Bonded** is an **AI-powered educational platform** designed to make learning complex chemistry concepts interactive and intuitive. By combining a specialized AI professor named **Dr. Lewis**, the platform provides students with a personalized assistant capable of explaining molecular structures, reaction mechanisms, and stoichiometry in real-time.
 
