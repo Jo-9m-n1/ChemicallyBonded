@@ -63,9 +63,15 @@ pip install -r requirements.txt
 ```
 
 ### 4. Set Up API Key
-Create a .env file or export your Gemini API key:
+Copy the template `.env.example` file to `.env`:
+```Bash
+cp .env.example .env
+```
 
-```bash
+Open `.env` and replace <Your Gemini API Key> with your actual Gemini API key.
+
+Alternatively, you can export it in your shell enironment:
+```Bash
 export API='your_api_key_here'
 ```
 
